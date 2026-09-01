@@ -122,8 +122,12 @@ button{cursor:pointer}
         <div class="kpi"><small>今日毛利润</small><b id="pTodayProfit">¥0</b></div>
       </div>
       <div class="panel">
-        <h2>本月利润</h2>
-        <div id="monthProfitDetail" class="list"></div>
+        <h2>利润查看</h2>
+        <div class="segment">
+          <button class="seg active" id="profitTodayBtn">今日</button>
+          <button class="seg" id="profitMonthBtn">本月</button>
+        </div>
+        <div id="periodProfitDetail" class="list"></div>
       </div>
       <div class="warn">毛利润 = 销售额 − 销售商品成本 − 销售手续费/运费。它不等于最终税务利润，也暂未计入人工、房租等经营费用。</div>
     </section>
@@ -191,6 +195,7 @@ button{cursor:pointer}
             <option value="OP13">OP13</option>
             <option value="EB04">EB04</option>
             <option value="EB03">EB03</option>
+            <option value="高达">高达</option>
           </select>
         </div>
         <div class="field" id="kindField"><label>种类</label>
@@ -209,6 +214,23 @@ button{cursor:pointer}
         <div class="field span2"><label>备注</label><input id="eNote" placeholder="直播间、PayPay、现金、品相等"></div>
       </div>
       <div class="actions"><button class="btn primary" type="submit" id="saveEntry">保存收货</button></div>
+    </form>
+  </div>
+</div>
+
+
+<div class="modal" id="adjustModal">
+  <div class="sheet">
+    <div class="sheethead"><h3>修改库存</h3><button class="close" data-close="adjustModal">×</button></div>
+    <div class="small" style="margin-bottom:12px">输入错误时，可直接把当前数量和平均成本修正为正确值。</div>
+    <form id="adjustForm">
+      <div class="formgrid">
+        <div class="field span2"><label>商品</label><input id="aItem" readonly></div>
+        <div class="field"><label>正确库存数量</label><input id="aQty" type="number" step="0.01" required></div>
+        <div class="field"><label>正确平均成本（日元）</label><input id="aAvg" type="number" min="0" step="1" required></div>
+        <div class="field span2"><label>调整原因</label><input id="aNote" placeholder="例如：之前数量输入错误"></div>
+      </div>
+      <div class="actions"><button class="btn primary" type="submit">保存修改</button></div>
     </form>
   </div>
 </div>
@@ -273,10 +295,13 @@ function analysis(){
       const newQty=inv[key].qty+Number(e.qty);
       inv[key].avg=newQty>0?(oldValue+buyTotal)/newQty:0;
       inv[key].qty=newQty;
-    }else{
+    }else if(e.type==='sell'){
       cogs=Math.max(0,Number(e.qty))*inv[key].avg;
       profit=gross(e)-Number(e.fee||0)-cogs;
       inv[key].qty-=Number(e.qty);
+    }else if(e.type==='adjust'){
+      inv[key].qty=Number(e.targetQty||0);
+      inv[key].avg=Number(e.targetAvg||0);
     }
     inv[key].value=inv[key].qty*inv[key].avg;
     enriched.push({...e,cogs,profit});
@@ -340,8 +365,18 @@ function renderPresetList(){
 }
 function renderInventory(){
   const {inv}=analysis();
-  const arr=Object.values(inv).filter(x=>Math.abs(x.qty)>0.000001).sort((a,b)=>b.value-a.value);
-  $('inventoryList').innerHTML=arr.length?arr.map(x=>`<div class="row"><div><div class="name">${esc(x.name)}</div><div class="meta">数量 ${fmtQty(x.qty)} · 平均成本 ${money(x.avg)}${x.qty<0?' · ⚠ 库存为负':''}</div></div><div class="amt ${x.qty<0?'negative':''}">${money(x.value)}</div></div>`).join(''):'<div class="empty">暂无库存</div>';
+  const arr=Object.entries(inv).filter(([,x])=>Math.abs(x.qty)>0.000001).sort((a,b)=>b[1].value-a[1].value);
+  $('inventoryList').innerHTML=arr.length?arr.map(([key,x])=>`<div class="row"><div><div class="name">${esc(x.name)}</div><div class="meta">数量 ${fmtQty(x.qty)} · 平均成本 ${money(x.avg)}${x.qty<0?' · ⚠ 库存为负':''}</div><div class="actions" style="margin-top:7px"><button class="btn" data-adjust="${escAttr(key)}">修改库存</button></div></div><div class="amt ${x.qty<0?'negative':''}">${money(Math.max(0,x.value))}</div></div>`).join(''):'<div class="empty">暂无库存</div>';
+  document.querySelectorAll('[data-adjust]').forEach(b=>b.addEventListener('click',()=>openAdjust(b.dataset.adjust)));
+}
+function openAdjust(key){
+  const {inv}=analysis(), x=inv[key];
+  if(!x)return;
+  $('aItem').value=x.name;
+  $('aQty').value=fmtQty(x.qty);
+  $('aAvg').value=Math.round(Number(x.avg)||0);
+  $('aNote').value='';
+  $('adjustModal').classList.add('open');
 }
 function renderProfit(){
   const {enriched}=analysis(),t=today(),mk=t.slice(0,7);
@@ -351,7 +386,10 @@ function renderProfit(){
     if(monthKey(e.date)===mk){ms+=gross(e);mc+=e.cogs;mf+=Number(e.fee||0);mp+=e.profit}
   });
   $('pTodaySales').textContent=money(sales);$('pTodayCogs').textContent=money(cogs);$('pTodayFees').textContent=money(fees);$('pTodayProfit').textContent=money(p);$('pTodayProfit').className=p>=0?'positive':'negative';
-  $('monthProfitDetail').innerHTML=`<div class="row"><div class="name">本月销售额</div><div class="amt">${money(ms)}</div></div><div class="row"><div class="name">销售商品成本</div><div class="amt">${money(mc)}</div></div><div class="row"><div class="name">手续费 / 运费</div><div class="amt">${money(mf)}</div></div><div class="row"><div class="name">本月毛利润</div><div class="amt ${mp>=0?'positive':'negative'}">${money(mp)}</div></div>`;
+  const isMonth=$('profitMonthBtn') && $('profitMonthBtn').classList.contains('active');
+  const vals=isMonth?[ms,mc,mf,mp]:[sales,cogs,fees,p];
+  const label=isMonth?'本月':'今日';
+  $('periodProfitDetail').innerHTML=`<div class="row"><div class="name">${label}销售额</div><div class="amt">${money(vals[0])}</div></div><div class="row"><div class="name">${label}销售商品成本</div><div class="amt">${money(vals[1])}</div></div><div class="row"><div class="name">${label}手续费 / 运费</div><div class="amt">${money(vals[2])}</div></div><div class="row"><div class="name">${label}毛利润</div><div class="amt ${vals[3]>=0?'positive':'negative'}">${money(vals[3])}</div></div>`;
 }
 function filtered(){
   const ft=$('fType').value,fp=$('fPay').value,q=$('fSearch').value.trim().toLowerCase();
@@ -373,14 +411,15 @@ function download(content,name,type){const blob=new Blob([content],{type}),url=U
 
 
 const KIND_OPTIONS={
-  default:['散包','原膜','切口'],
-  OP17:['散包','原膜','切口'],
-  OP16:['散包','原膜','切口'],
-  OP15:['散包','原膜','切口'],
-  OP14:['散包','原膜','切口'],
-  OP13:['散包','原膜','切口'],
-  EB04:['散包','原膜','切口'],
-  EB03:['散包','原膜','切口']
+  default:['散包','原膜','垃圾袋','切口'],
+  OP17:['散包','原膜','垃圾袋','切口'],
+  OP16:['散包','原膜','垃圾袋','切口'],
+  OP15:['散包','原膜','垃圾袋','切口'],
+  OP14:['散包','原膜','垃圾袋','切口'],
+  OP13:['散包','原膜','垃圾袋','切口'],
+  EB04:['散包','原膜','垃圾袋','切口'],
+  EB03:['散包','原膜','垃圾袋','切口'],
+  高达:['散包','原膜','垃圾袋','切口']
 };
 function resetProductSelector(){
   $('eSeries').value='';
@@ -411,7 +450,7 @@ function updateProductName(){
 }
 function setProductFromName(name){
   const compact=String(name||'').trim();
-  const m=compact.match(/^(OP\d+|EB\d+)\s*(.+)$/i);
+  const m=compact.match(/^(OP\d+|EB\d+|高达)\s*(.+)$/i);
   if(m){
     const series=m[1].toUpperCase(),kind=m[2].trim();
     const hasSeries=[...$('eSeries').options].some(o=>o.value===series);
@@ -454,6 +493,20 @@ $('entryForm').addEventListener('submit',e=>{
   save();closeModal('entryModal');renderAll();
 });
 $('managePresets').addEventListener('click',()=>{$('presetModal').classList.add('open');renderPresetList()});
+
+$('profitTodayBtn').addEventListener('click',()=>{
+  $('profitTodayBtn').classList.add('active');$('profitMonthBtn').classList.remove('active');renderProfit();
+});
+$('profitMonthBtn').addEventListener('click',()=>{
+  $('profitMonthBtn').classList.add('active');$('profitTodayBtn').classList.remove('active');renderProfit();
+});
+$('adjustForm').addEventListener('submit',e=>{
+  e.preventDefault();
+  const item=$('aItem').value.trim(), qty=Number($('aQty').value), avg=Number($('aAvg').value);
+  if(!item||Number.isNaN(qty)||Number.isNaN(avg)||avg<0)return alert('请检查库存数量和平均成本');
+  entries.push({id:uid(),type:'adjust',item,targetQty:qty,targetAvg:avg,qty:0,price:0,fee:0,party:'',date:today(),note:$('aNote').value.trim()||'库存修正',payment:'paid',createdAt:new Date().toISOString()});
+  save();closeModal('adjustModal');renderAll();renderInventory();
+});
 $('presetForm').addEventListener('submit',e=>{
   e.preventDefault();const name=$('pName').value.trim();if(!name)return;
   if(presets.some(p=>p.name===name))return alert('这个商品已经存在');
