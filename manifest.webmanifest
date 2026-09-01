@@ -1,7 +1,6 @@
 {
-  "name": "卡牌直播账本 V2",
+  "name": "卡牌直播账本",
   "short_name": "卡牌账本",
-  "description": "卡牌直播收货、卖货、库存、利润与待收款管理",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",

@@ -151,6 +151,37 @@ button{cursor:pointer}
 
     <section id="settings" class="view">
       <div class="panel">
+        <h2>☁ 手机 / 电脑云同步</h2>
+        <div class="small" style="margin-bottom:10px">同一个 Firebase 项目 + 同一个邮箱账号登录后，手机和电脑会自动同步。</div>
+        <div style="display:flex;gap:8px;align-items:center"><span id="cloudDot" style="width:9px;height:9px;border-radius:50%;background:#9ca3af"></span><b id="cloudStatus">未连接 Firebase</b></div>
+        <div id="firebaseSetup" style="margin-top:12px">
+          <div class="formgrid">
+            <div class="field span2"><label>apiKey</label><input id="fbApiKey"></div>
+            <div class="field"><label>authDomain</label><input id="fbAuthDomain"></div>
+            <div class="field"><label>projectId</label><input id="fbProjectId"></div>
+            <div class="field span2"><label>appId</label><input id="fbAppId"></div>
+          </div>
+          <div class="actions"><button class="btn primary" id="saveFirebaseConfig" type="button">保存 Firebase 配置</button></div>
+        </div>
+        <div id="loginBox" style="display:none;margin-top:12px">
+          <div class="formgrid">
+            <div class="field span2"><label>邮箱</label><input id="fbEmail" type="email"></div>
+            <div class="field span2"><label>密码</label><input id="fbPassword" type="password"></div>
+          </div>
+          <div class="actions">
+            <button class="btn primary" id="cloudLogin" type="button">登录并同步</button>
+            <button class="btn" id="cloudLogout" type="button" style="display:none">退出登录</button>
+          </div>
+        </div>
+        <div id="cloudActions" style="display:none;margin-top:12px">
+          <div class="actions">
+            <button class="btn primary" id="uploadLocalCloud" type="button">上传本机数据到云端</button>
+            <button class="btn" id="downloadCloudLocal" type="button">从云端恢复到本机</button>
+          </div>
+          <div class="small" style="margin-top:8px">第一次建议：电脑先上传本机数据，手机再从云端恢复。之后自动同步。</div>
+        </div>
+      </div>
+      <div class="panel">
         <h2>数据管理</h2>
         <div class="actions">
           <button class="btn" id="exportCsv">导出 CSV</button>
@@ -277,8 +308,9 @@ function load(){
 function save(){
   localStorage.setItem(KEY,JSON.stringify(entries));
   $('saveState').textContent='已保存本机';
+  if(window.CloudSync&&window.CloudSync.queueUpload)window.CloudSync.queueUpload();
 }
-function savePresets(){localStorage.setItem(PRESET_KEY,JSON.stringify(presets))}
+function savePresets(){localStorage.setItem(PRESET_KEY,JSON.stringify(presets));if(window.CloudSync&&window.CloudSync.queueUpload)window.CloudSync.queueUpload()}
 function gross(e){return Number(e.qty)*Number(e.price)}
 function analysis(){
   const sorted=[...entries].sort((a,b)=>(a.date+(a.createdAt||'')).localeCompare(b.date+(b.createdAt||'')));
@@ -530,9 +562,66 @@ $('importV1').addEventListener('click',()=>{
   old.forEach(o=>{if(!ids.has(o.id))entries.push({...o,payment:o.type==='sell'?'paid':'paid'})});save();renderAll();$('v1Hint').textContent=`已导入 ${old.length} 条旧版记录`;
 });
 document.querySelectorAll('.modal').forEach(m=>m.addEventListener('click',e=>{if(e.target===m)m.classList.remove('open')}));
+window.LedgerBridge={
+  getData:()=>({entries:JSON.parse(JSON.stringify(entries)),presets:JSON.parse(JSON.stringify(presets))}),
+  setData:d=>{if(d&&Array.isArray(d.entries))entries=d.entries;if(d&&Array.isArray(d.presets))presets=d.presets;localStorage.setItem(KEY,JSON.stringify(entries));localStorage.setItem(PRESET_KEY,JSON.stringify(presets));renderAll();}
+};
 load();$('eDate').value=today();renderAll();
 if('serviceWorker' in navigator)window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js').catch(()=>{}));
 })();
 </script>
+
+<script type="module">
+import {initializeApp} from "https://www.gstatic.com/firebasejs/10.12.5/firebase-app.js";
+import {getAuth,onAuthStateChanged,signInWithEmailAndPassword,signOut} from "https://www.gstatic.com/firebasejs/10.12.5/firebase-auth.js";
+import {getFirestore,doc,setDoc,getDoc,onSnapshot,serverTimestamp} from "https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
+const CFG='card_ledger_firebase_config_v1', $=id=>document.getElementById(id);
+let auth,db,user,unsub,timer,remote=false;
+function stat(t,c){$('cloudStatus').textContent=t;$('cloudDot').style.background=c||'#9ca3af';$('saveState').textContent=t}
+function cfg(){try{return JSON.parse(localStorage.getItem(CFG)||'null')}catch{return null}}
+function ref(){return doc(db,'cardLedgerUsers',user.uid)}
+async function upload(){
+  if(!user||remote)return;
+  stat('正在同步…','#d97706');
+  await setDoc(ref(),{...window.LedgerBridge.getData(),updatedAt:serverTimestamp(),version:'2.4'});
+  stat('云端已同步','#16a34a');
+}
+function queueUpload(){if(!user||remote)return;clearTimeout(timer);timer=setTimeout(()=>upload().catch(e=>{console.error(e);stat('同步失败','#dc2626')}),700)}
+window.CloudSync={queueUpload};
+function watch(){
+  if(unsub)unsub();
+  unsub=onSnapshot(ref(),s=>{
+    if(!s.exists()||remote)return;
+    const d=s.data(),a=JSON.stringify(window.LedgerBridge.getData()),b=JSON.stringify({entries:d.entries||[],presets:d.presets||[]});
+    if(a!==b){remote=true;window.LedgerBridge.setData({entries:d.entries||[],presets:d.presets||[]});remote=false;stat('收到云端更新','#16a34a')}
+    else stat('云端已同步','#16a34a');
+  },e=>{console.error(e);stat('云端监听失败','#dc2626')})
+}
+async function restore(){
+  const s=await getDoc(ref()); if(!s.exists())return alert('云端还没有账本数据');
+  const d=s.data(); if(!confirm(`云端有 ${Array.isArray(d.entries)?d.entries.length:0} 条流水，确定覆盖本机吗？`))return;
+  remote=true;window.LedgerBridge.setData({entries:d.entries||[],presets:d.presets||[]});remote=false;stat('已从云端恢复','#16a34a');
+}
+function init(){
+  const c=cfg();
+  if(!c){$('firebaseSetup').style.display='block';$('loginBox').style.display='none';return}
+  $('firebaseSetup').style.display='none';$('loginBox').style.display='block';
+  try{
+    const app=initializeApp(c);auth=getAuth(app);db=getFirestore(app);
+    onAuthStateChanged(auth,u=>{
+      user=u;
+      if(u){$('cloudLogin').style.display='none';$('cloudLogout').style.display='inline-block';$('cloudActions').style.display='block';stat('云端已连接','#16a34a');watch()}
+      else{if(unsub){unsub();unsub=null}$('cloudLogin').style.display='inline-block';$('cloudLogout').style.display='none';$('cloudActions').style.display='none';stat('等待登录','#d97706')}
+    })
+  }catch(e){console.error(e);stat('Firebase 配置错误','#dc2626');$('firebaseSetup').style.display='block'}
+}
+$('saveFirebaseConfig').onclick=()=>{const c={apiKey:$('fbApiKey').value.trim(),authDomain:$('fbAuthDomain').value.trim(),projectId:$('fbProjectId').value.trim(),appId:$('fbAppId').value.trim()};if(Object.values(c).some(v=>!v))return alert('请填写完整 4 项');localStorage.setItem(CFG,JSON.stringify(c));location.reload()};
+$('cloudLogin').onclick=async()=>{try{await signInWithEmailAndPassword(auth,$('fbEmail').value.trim(),$('fbPassword').value)}catch(e){console.error(e);alert('登录失败，请检查邮箱、密码和 Firebase Authentication 设置')}};
+$('cloudLogout').onclick=()=>signOut(auth);
+$('uploadLocalCloud').onclick=async()=>{if(confirm('确定用本机数据覆盖云端吗？')){await upload();alert('已上传到云端')}};
+$('downloadCloudLocal').onclick=()=>restore().catch(e=>{console.error(e);alert('下载失败，请检查 Firestore 权限')});
+init();
+</script>
+
 </body>
 </html>
