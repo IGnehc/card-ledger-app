@@ -1,12 +1,23 @@
-直播卡牌记账 PWA
+卡牌直播账本 V2
 
-使用方法：
-1. 把整个文件夹部署到支持 HTTPS 的网站空间（例如 GitHub Pages / Cloudflare Pages / Vercel）。
-2. 安卓 Chrome 打开后，菜单里选择“添加到主屏幕 / 安装应用”。
-3. iPhone Safari 打开后，分享 -> 添加到主屏幕。
-4. 安装后可以像普通 App 一样从桌面启动。
-5. 数据仍保存在本机浏览器存储中，建议定期使用“备份数据”。
+GitHub Pages 更新方法：
+1. 打开 card-ledger-app 仓库。
+2. 删除或覆盖旧的 index.html、manifest.webmanifest、sw.js、icons 文件夹。
+3. 上传本压缩包解压后的全部文件。
+4. Commit changes。
+5. 等待 Actions -> pages build and deployment 变成绿色。
+6. 原来的网址不变。
+
+V2 功能：
+- 今日收货 / 今日销售 / 今日毛利润 / 待收款
+- 库存数量、平均成本、库存金额
+- 移动加权平均成本
+- 本月销售和本月毛利润
+- 收货 / 卖货快速录入
+- 已付款 / 未付款
+- 常用商品与默认买卖价格
+- 流水查询、CSV 导出、JSON 备份恢复
+- 同浏览器旧版 V1 数据迁移
 
 注意：
-- 直接双击 index.html 虽然能使用记账功能，但不能完整安装成 PWA。
-- PWA 安装通常要求 HTTPS。
+数据仍然只保存在当前浏览器本机 localStorage。

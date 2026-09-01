@@ -1,12 +1,12 @@
 {
-  "name": "直播卡牌记账",
-  "short_name": "卡牌记账",
-  "description": "用于直播拆卡、收货、卖货和现金流记录的记账 App",
+  "name": "卡牌直播账本 V2",
+  "short_name": "卡牌账本",
+  "description": "卡牌直播收货、卖货、库存、利润与待收款管理",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
-  "background_color": "#f5f6f8",
-  "theme_color": "#2563eb",
+  "background_color": "#f6f7f9",
+  "theme_color": "#111827",
   "icons": [
     {
       "src": "icons/icon-192.png",

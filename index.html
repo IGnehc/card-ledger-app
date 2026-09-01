@@ -1,321 +1,394 @@
 <!doctype html>
 <html lang="zh-CN">
 <head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>直播卡牌记账</title>
-<style>
-  :root{
-    --bg:#f5f6f8; --card:#fff; --text:#17191c; --muted:#737983;
-    --border:#e5e7eb; --primary:#2563eb; --buy:#dc2626; --sell:#16a34a;
-  }
-  *{box-sizing:border-box}
-  body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;background:var(--bg);color:var(--text)}
-  .wrap{max-width:1100px;margin:auto;padding:18px}
-  h1{font-size:24px;margin:0 0 4px}
-  .sub{color:var(--muted);font-size:13px;margin-bottom:16px}
-  .stats{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:14px}
-  .stat,.card{background:var(--card);border:1px solid var(--border);border-radius:14px}
-  .stat{padding:14px}.stat small{color:var(--muted)}.stat b{display:block;font-size:22px;margin-top:5px}
-  .positive{color:var(--sell)} .negative{color:var(--buy)}
-  .card{padding:16px;margin-bottom:14px}
-  .tabs{display:flex;gap:8px;margin-bottom:14px}
-  .tab{border:1px solid var(--border);background:white;border-radius:10px;padding:10px 18px;cursor:pointer;font-weight:700}
-  .tab.active.buy{background:#fef2f2;border-color:#fecaca;color:#b91c1c}
-  .tab.active.sell{background:#f0fdf4;border-color:#bbf7d0;color:#15803d}
-  .grid{display:grid;grid-template-columns:2fr 1fr 1fr 1fr 1.5fr;gap:10px}
-  label{font-size:12px;color:var(--muted);display:block;margin-bottom:5px}
-  input,select,button{font:inherit}
-  input,select{width:100%;border:1px solid var(--border);border-radius:9px;padding:11px;background:white}
-  .actions{display:flex;gap:8px;align-items:end;margin-top:12px;flex-wrap:wrap}
-  button.primary{border:0;background:var(--primary);color:white;border-radius:10px;padding:11px 18px;font-weight:700;cursor:pointer}
-  button.secondary{border:1px solid var(--border);background:white;border-radius:10px;padding:10px 14px;cursor:pointer}
-  button.danger{border:1px solid #fecaca;color:#b91c1c;background:#fff;border-radius:8px;padding:6px 10px;cursor:pointer}
-  .filter{display:grid;grid-template-columns:1fr 1fr 2fr auto;gap:8px;margin-bottom:10px}
-  .table-wrap{overflow:auto}
-  table{width:100%;border-collapse:collapse;min-width:820px}
-  th,td{padding:10px 8px;border-bottom:1px solid var(--border);text-align:left;font-size:13px}
-  th{color:var(--muted);font-weight:600;background:#fafafa;position:sticky;top:0}
-  .pill{display:inline-block;border-radius:999px;padding:3px 8px;font-weight:700;font-size:12px}
-  .pill.buy{background:#fef2f2;color:#b91c1c}.pill.sell{background:#f0fdf4;color:#15803d}
-  .empty{text-align:center;color:var(--muted);padding:28px}
-  .foot{font-size:12px;color:var(--muted);line-height:1.6}
-  @media(max-width:760px){
-    .stats{grid-template-columns:1fr 1fr}
-    .grid{grid-template-columns:1fr 1fr}
-    .grid .wide{grid-column:1/-1}
-    .filter{grid-template-columns:1fr 1fr}
-    h1{font-size:21px}
-  }
-</style>
-
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>卡牌直播账本 V2</title>
 <link rel="manifest" href="manifest.webmanifest">
-<meta name="theme-color" content="#2563eb">
+<meta name="theme-color" content="#111827">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
-<meta name="apple-mobile-web-app-title" content="卡牌记账">
+<meta name="apple-mobile-web-app-title" content="卡牌账本">
 <link rel="apple-touch-icon" href="icons/icon-192.png">
-
+<style>
+:root{
+  --bg:#f6f7f9;--card:#fff;--text:#17191d;--muted:#737983;--border:#e6e8ec;
+  --accent:#111827;--green:#15803d;--red:#b91c1c;--amber:#b45309;--blue:#1d4ed8;
+}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif}
+button,input,select{font:inherit}
+button{cursor:pointer}
+.app{max-width:980px;margin:auto;padding:14px 14px 88px}
+.topbar{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:4px 0 14px}
+.brand h1{font-size:22px;margin:0}.brand p{font-size:12px;color:var(--muted);margin:4px 0 0}
+.sync{font-size:12px;color:var(--muted)}
+.grid4{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+.kpi,.panel{background:var(--card);border:1px solid var(--border);border-radius:16px}
+.kpi{padding:13px}.kpi small{color:var(--muted);font-size:12px}.kpi b{display:block;font-size:21px;margin-top:5px}
+.panel{padding:14px;margin-top:12px}
+.panel h2{font-size:15px;margin:0 0 12px}
+.quick{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+.bigbtn{min-height:74px;border:1px solid var(--border);background:#fff;border-radius:14px;font-weight:800;font-size:15px}
+.bigbtn.primary{background:var(--accent);color:#fff;border-color:var(--accent)}
+.bigbtn span{display:block;font-size:12px;font-weight:500;opacity:.7;margin-top:4px}
+.presets{display:flex;gap:8px;overflow:auto;padding-bottom:3px}
+.chip{white-space:nowrap;border:1px solid var(--border);background:#fff;border-radius:999px;padding:9px 12px;font-size:13px}
+.warn{background:#fff7ed;border:1px solid #fed7aa;color:#9a3412;border-radius:12px;padding:10px 12px;font-size:12px;margin-top:10px}
+.list{display:grid;gap:8px}
+.row{display:grid;grid-template-columns:1fr auto;gap:10px;align-items:center;border-bottom:1px solid var(--border);padding:10px 0}
+.row:last-child{border-bottom:0}.row .name{font-weight:700;font-size:14px}.row .meta{font-size:12px;color:var(--muted);margin-top:3px}
+.amt{text-align:right;font-weight:800}.positive{color:var(--green)}.negative{color:var(--red)}.pending{color:var(--amber)}
+.empty{padding:18px;text-align:center;color:var(--muted);font-size:13px}
+.view{display:none}.view.active{display:block}
+.formgrid{display:grid;grid-template-columns:2fr 1fr 1fr;gap:10px}
+.field label{display:block;font-size:12px;color:var(--muted);margin:0 0 5px}
+.field input,.field select{width:100%;border:1px solid var(--border);background:#fff;border-radius:11px;padding:11px;min-height:44px}
+.span2{grid-column:span 2}.span3{grid-column:1/-1}
+.segment{display:flex;gap:8px;margin-bottom:12px}.seg{flex:1;border:1px solid var(--border);background:#fff;border-radius:11px;padding:11px;font-weight:700}.seg.active{background:var(--accent);color:#fff;border-color:var(--accent)}
+.actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+.btn{border:1px solid var(--border);background:#fff;border-radius:11px;padding:11px 14px;font-weight:700}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:#fff}.btn.danger{color:var(--red)}
+.toolbar{display:grid;grid-template-columns:1fr 1fr 2fr;gap:8px;margin-bottom:10px}
+.tablewrap{overflow:auto}.table{min-width:760px;width:100%;border-collapse:collapse}.table th,.table td{padding:10px 8px;border-bottom:1px solid var(--border);font-size:12px;text-align:left}.table th{color:var(--muted)}
+.badge{display:inline-block;padding:3px 7px;border-radius:999px;font-size:11px;font-weight:800}.buy{background:#fef2f2;color:#b91c1c}.sell{background:#f0fdf4;color:#15803d}.paid{background:#eff6ff;color:#1d4ed8}.unpaid{background:#fff7ed;color:#b45309}
+.bottomnav{position:fixed;left:0;right:0;bottom:0;background:rgba(255,255,255,.96);border-top:1px solid var(--border);display:flex;justify-content:center;z-index:20}
+.navinner{width:min(980px,100%);display:grid;grid-template-columns:repeat(5,1fr)}
+.navbtn{border:0;background:transparent;padding:10px 4px 9px;min-height:62px;color:var(--muted);font-size:11px}.navbtn b{display:block;font-size:19px;margin-bottom:2px}.navbtn.active{color:var(--text);font-weight:800}
+.modal{position:fixed;inset:0;background:rgba(0,0,0,.35);display:none;align-items:flex-end;z-index:50}.modal.open{display:flex}.sheet{background:#fff;border-radius:20px 20px 0 0;width:100%;max-width:720px;margin:auto;padding:16px 16px calc(18px + env(safe-area-inset-bottom));max-height:88%;overflow:auto}
+.sheethead{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}.sheethead h3{margin:0;font-size:17px}
+.close{border:0;background:#f3f4f6;border-radius:999px;width:36px;height:36px}
+.hr{height:1px;background:var(--border);margin:12px 0}
+.small{font-size:12px;color:var(--muted)}
+@media(max-width:720px){
+  .grid4{grid-template-columns:1fr 1fr}.quick{grid-template-columns:1fr 1fr}.formgrid{grid-template-columns:1fr 1fr}.span3{grid-column:1/-1}.toolbar{grid-template-columns:1fr 1fr}.toolbar input{grid-column:1/-1}
+}
+</style>
 </head>
 <body>
-<div class="wrap">
-  <h1>直播卡牌记账</h1>
-  <div class="sub">适合海贼王 / 宝可梦等卡牌直播：快速记录收货、卖货和现金流。</div>
+<div class="app">
+  <div class="topbar">
+    <div class="brand"><h1>卡牌直播账本</h1><p>收货 · 卖货 · 库存 · 利润 · 待收款</p></div>
+    <div class="sync" id="saveState">已保存本机</div>
+  </div>
 
-  <section class="stats">
-    <div class="stat"><small>今日收货金额</small><b id="todayBuy" class="negative">¥0</b></div>
-    <div class="stat"><small>今日销售金额</small><b id="todaySell" class="positive">¥0</b></div>
-    <div class="stat"><small>今日现金差额</small><b id="todayNet">¥0</b></div>
-    <div class="stat"><small>累计现金差额</small><b id="allNet">¥0</b></div>
-  </section>
+  <main>
+    <section id="home" class="view active">
+      <div class="grid4">
+        <div class="kpi"><small>今日收货</small><b id="kTodayBuy" class="negative">¥0</b></div>
+        <div class="kpi"><small>今日销售</small><b id="kTodaySell" class="positive">¥0</b></div>
+        <div class="kpi"><small>今日毛利润</small><b id="kTodayProfit">¥0</b></div>
+        <div class="kpi"><small>待收款</small><b id="kPending" class="pending">¥0</b></div>
+      </div>
+      <div class="grid4" style="margin-top:10px">
+        <div class="kpi"><small>库存金额</small><b id="kStockValue">¥0</b></div>
+        <div class="kpi"><small>库存品种</small><b id="kSku">0</b></div>
+        <div class="kpi"><small>本月销售</small><b id="kMonthSell">¥0</b></div>
+        <div class="kpi"><small>本月毛利润</small><b id="kMonthProfit">¥0</b></div>
+      </div>
+      <div class="panel">
+        <h2>快速记一笔</h2>
+        <div class="quick">
+          <button class="bigbtn primary" id="qBuy">＋ 收货<span>进货 / 收卡</span></button>
+          <button class="bigbtn" id="qSell">¥ 卖货<span>直播成交</span></button>
+          <button class="bigbtn" data-go="inventory">□ 库存<span>看剩余数量</span></button>
+          <button class="bigbtn" data-go="profit">↗ 利润<span>今日 / 本月</span></button>
+        </div>
+      </div>
+      <div class="panel">
+        <h2>常用商品</h2>
+        <div class="presets" id="presetChips"></div>
+        <div class="actions"><button class="btn" id="managePresets">管理常用商品</button></div>
+      </div>
+      <div class="panel">
+        <h2>最近流水</h2>
+        <div id="recentList" class="list"></div>
+      </div>
+    </section>
 
-  <section class="card">
-    <div class="tabs">
-      <button class="tab buy active" id="buyTab" type="button">收货</button>
-      <button class="tab sell" id="sellTab" type="button">卖货</button>
-    </div>
+    <section id="inventory" class="view">
+      <div class="panel">
+        <h2>当前库存</h2>
+        <div class="small">成本按移动加权平均计算。库存金额 = 当前数量 × 平均成本。</div>
+        <div id="inventoryList" class="list" style="margin-top:8px"></div>
+      </div>
+    </section>
 
+    <section id="profit" class="view">
+      <div class="grid4">
+        <div class="kpi"><small>今日销售</small><b id="pTodaySales">¥0</b></div>
+        <div class="kpi"><small>今日成本</small><b id="pTodayCogs">¥0</b></div>
+        <div class="kpi"><small>今日费用</small><b id="pTodayFees">¥0</b></div>
+        <div class="kpi"><small>今日毛利润</small><b id="pTodayProfit">¥0</b></div>
+      </div>
+      <div class="panel">
+        <h2>本月利润</h2>
+        <div id="monthProfitDetail" class="list"></div>
+      </div>
+      <div class="warn">毛利润 = 销售额 − 销售商品成本 − 销售手续费/运费。它不等于最终税务利润，也暂未计入人工、房租等经营费用。</div>
+    </section>
+
+    <section id="ledger" class="view">
+      <div class="panel">
+        <h2>全部流水</h2>
+        <div class="toolbar">
+          <select id="fType"><option value="">全部类型</option><option value="buy">收货</option><option value="sell">卖货</option></select>
+          <select id="fPay"><option value="">全部付款状态</option><option value="paid">已付款</option><option value="unpaid">未付款</option></select>
+          <input id="fSearch" placeholder="搜索商品、客户、备注">
+        </div>
+        <div class="tablewrap">
+          <table class="table">
+            <thead><tr><th>日期</th><th>类型</th><th>商品</th><th>数量</th><th>单价</th><th>费用</th><th>金额</th><th>付款</th><th>客户/卖家</th><th></th></tr></thead>
+            <tbody id="ledgerBody"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <section id="settings" class="view">
+      <div class="panel">
+        <h2>数据管理</h2>
+        <div class="actions">
+          <button class="btn" id="exportCsv">导出 CSV</button>
+          <button class="btn" id="backupJson">备份 JSON</button>
+          <button class="btn" id="restoreJson">恢复备份</button>
+          <input type="file" id="restoreFile" accept=".json,application/json" hidden>
+        </div>
+        <div class="small" style="margin-top:10px">账本数据只保存在当前手机/浏览器。建议定期备份。换手机前必须先备份。</div>
+      </div>
+      <div class="panel">
+        <h2>旧版数据</h2>
+        <div class="actions"><button class="btn" id="importV1">尝试导入 V1 数据</button></div>
+        <div class="small" id="v1Hint">如果你之前在同一浏览器使用过旧版，可自动迁移。</div>
+      </div>
+    </section>
+  </main>
+</div>
+
+<nav class="bottomnav">
+  <div class="navinner">
+    <button class="navbtn active" data-go="home"><b>⌂</b>首页</button>
+    <button class="navbtn" data-go="inventory"><b>□</b>库存</button>
+    <button class="navbtn" data-go="profit"><b>↗</b>利润</button>
+    <button class="navbtn" data-go="ledger"><b>≡</b>流水</button>
+    <button class="navbtn" data-go="settings"><b>⚙</b>设置</button>
+  </div>
+</nav>
+
+<div class="modal" id="entryModal">
+  <div class="sheet">
+    <div class="sheethead"><h3 id="entryTitle">记一笔收货</h3><button class="close" data-close="entryModal">×</button></div>
+    <div class="segment"><button class="seg active" id="mBuy">收货</button><button class="seg" id="mSell">卖货</button></div>
     <form id="entryForm">
-      <div class="grid">
-        <div class="wide">
-          <label for="item">商品 / 卡牌</label>
-          <input id="item" required placeholder="例如：OP-13 原盒 / 路飞 P卡 / 散包" />
-        </div>
-        <div>
-          <label for="qty">数量</label>
-          <input id="qty" type="number" min="0.01" step="0.01" value="1" required />
-        </div>
-        <div>
-          <label for="price">单价（日元）</label>
-          <input id="price" type="number" min="0" step="1" placeholder="0" required />
-        </div>
-        <div>
-          <label for="fee">手续费/运费</label>
-          <input id="fee" type="number" min="0" step="1" value="0" />
-        </div>
-        <div>
-          <label for="party">客户 / 卖家</label>
-          <input id="party" placeholder="可不填" />
-        </div>
+      <div class="formgrid">
+        <div class="field span2"><label>商品 / 卡牌</label><input id="eItem" list="productList" required placeholder="例如：OP16 原膜"></div>
+        <div class="field"><label>数量</label><input id="eQty" type="number" min="0.01" step="0.01" value="1" required></div>
+        <div class="field"><label>单价（日元）</label><input id="ePrice" type="number" min="0" step="1" required placeholder="0"></div>
+        <div class="field"><label>手续费 / 运费</label><input id="eFee" type="number" min="0" step="1" value="0"></div>
+        <div class="field" id="payField" style="display:none"><label>付款状态</label><select id="ePay"><option value="paid">已付款</option><option value="unpaid">未付款</option></select></div>
+        <div class="field"><label id="partyLabel">卖家</label><input id="eParty" placeholder="可不填"></div>
+        <div class="field"><label>日期</label><input id="eDate" type="date" required></div>
+        <div class="field span2"><label>备注</label><input id="eNote" placeholder="直播间、PayPay、现金、品相等"></div>
       </div>
-
-      <div class="grid" style="margin-top:10px">
-        <div>
-          <label for="date">日期</label>
-          <input id="date" type="date" required />
-        </div>
-        <div class="wide" style="grid-column:span 4">
-          <label for="note">备注</label>
-          <input id="note" placeholder="例如：直播间A、微信、现金、PayPay、品相等" />
-        </div>
-      </div>
-
-      <div class="actions">
-        <button class="primary" type="submit" id="submitBtn">记一笔收货</button>
-        <button class="secondary" type="button" id="exportCsv">导出 CSV</button>
-        <button class="secondary" type="button" id="exportJson">备份数据</button>
-        <button class="secondary" type="button" id="importBtn">恢复备份</button>
-        <input id="importFile" type="file" accept=".json,application/json" hidden />
-      </div>
+      <div class="actions"><button class="btn primary" type="submit" id="saveEntry">保存收货</button></div>
     </form>
-  </section>
+    <datalist id="productList"></datalist>
+  </div>
+</div>
 
-  <section class="card">
-    <div class="filter">
-      <select id="typeFilter">
-        <option value="">全部类型</option>
-        <option value="buy">只看收货</option>
-        <option value="sell">只看卖货</option>
-      </select>
-      <input id="dateFilter" type="date" />
-      <input id="search" placeholder="搜索商品、客户或备注" />
-      <button class="secondary" id="clearFilter" type="button">清除筛选</button>
-    </div>
-
-    <div class="table-wrap">
-      <table>
-        <thead>
-          <tr>
-            <th>日期</th><th>类型</th><th>商品</th><th>数量</th><th>单价</th>
-            <th>手续费/运费</th><th>总金额</th><th>客户/卖家</th><th>备注</th><th></th>
-          </tr>
-        </thead>
-        <tbody id="tbody"></tbody>
-      </table>
-      <div id="empty" class="empty">还没有记录。上面记第一笔即可。</div>
-    </div>
-  </section>
-
-  <div class="foot">
-    数据默认保存在当前浏览器本机。建议每天或每周点击“备份数据”。<br>
-    当前“现金差额”= 卖货收入－销售费用－收货成本－收货费用；它不是严格的会计利润，因为单件库存成本尚未做配对。
+<div class="modal" id="presetModal">
+  <div class="sheet">
+    <div class="sheethead"><h3>常用商品</h3><button class="close" data-close="presetModal">×</button></div>
+    <form id="presetForm">
+      <div class="formgrid">
+        <div class="field span2"><label>商品名称</label><input id="pName" required placeholder="例如：OP16 原膜"></div>
+        <div class="field"><label>默认收货价</label><input id="pBuy" type="number" min="0" step="1" placeholder="可不填"></div>
+        <div class="field"><label>默认卖价</label><input id="pSell" type="number" min="0" step="1" placeholder="可不填"></div>
+      </div>
+      <div class="actions"><button class="btn primary" type="submit">添加商品</button></div>
+    </form>
+    <div class="hr"></div>
+    <div id="presetList" class="list"></div>
   </div>
 </div>
 
 <script>
 (() => {
-  const KEY = "card_live_ledger_v1";
-  let mode = "buy";
-  let rows = [];
+const KEY='card_live_ledger_v2', PRESET_KEY='card_live_presets_v2', OLD_KEY='card_live_ledger_v1';
+let entries=[], presets=[], mode='buy';
+const $=id=>document.getElementById(id);
+const money=n=>'¥'+Math.round(Number(n)||0).toLocaleString('ja-JP');
+const today=()=>{const d=new Date(),y=d.getFullYear(),m=String(d.getMonth()+1).padStart(2,'0'),da=String(d.getDate()).padStart(2,'0');return `${y}-${m}-${da}`};
+const monthKey=s=>String(s||'').slice(0,7);
+const uid=()=>crypto.randomUUID?crypto.randomUUID():Date.now()+'_'+Math.random();
 
-  const $ = id => document.getElementById(id);
-  const money = n => "¥" + Math.round(Number(n)||0).toLocaleString("ja-JP");
-
-  function todayStr(){
-    const d = new Date();
-    const y=d.getFullYear(), m=String(d.getMonth()+1).padStart(2,"0"), day=String(d.getDate()).padStart(2,"0");
-    return `${y}-${m}-${day}`;
+function load(){
+  try{entries=JSON.parse(localStorage.getItem(KEY)||'[]');if(!Array.isArray(entries))entries=[]}catch{entries=[]}
+  try{presets=JSON.parse(localStorage.getItem(PRESET_KEY)||'[]');if(!Array.isArray(presets))presets=[]}catch{presets=[]}
+  if(!presets.length){
+    presets=[
+      {id:uid(),name:'OP16 原膜',buy:'',sell:''},
+      {id:uid(),name:'OP16 切口',buy:'',sell:''},
+      {id:uid(),name:'散包',buy:'',sell:''},
+      {id:uid(),name:'单卡',buy:'',sell:''}
+    ]; savePresets();
   }
-
-  function load(){
-    try {
-      const v = JSON.parse(localStorage.getItem(KEY) || "[]");
-      rows = Array.isArray(v) ? v : [];
-    } catch { rows = []; }
+}
+function save(){
+  localStorage.setItem(KEY,JSON.stringify(entries));
+  $('saveState').textContent='已保存本机';
+}
+function savePresets(){localStorage.setItem(PRESET_KEY,JSON.stringify(presets))}
+function gross(e){return Number(e.qty)*Number(e.price)}
+function analysis(){
+  const sorted=[...entries].sort((a,b)=>(a.date+(a.createdAt||'')).localeCompare(b.date+(b.createdAt||'')));
+  const inv={}, enriched=[];
+  for(const e of sorted){
+    const name=e.item.trim();
+    if(!inv[name])inv[name]={qty:0,avg:0,value:0};
+    let cogs=0, profit=0;
+    if(e.type==='buy'){
+      const buyTotal=gross(e)+Number(e.fee||0);
+      const oldValue=inv[name].qty*inv[name].avg;
+      const newQty=inv[name].qty+Number(e.qty);
+      inv[name].avg=newQty>0?(oldValue+buyTotal)/newQty:0;
+      inv[name].qty=newQty;
+    }else{
+      cogs=Math.max(0,Number(e.qty))*inv[name].avg;
+      profit=gross(e)-Number(e.fee||0)-cogs;
+      inv[name].qty-=Number(e.qty);
+    }
+    inv[name].value=inv[name].qty*inv[name].avg;
+    enriched.push({...e,cogs,profit});
   }
-  function save(){ localStorage.setItem(KEY, JSON.stringify(rows)); }
-
-  function setMode(m){
-    mode = m;
-    $("buyTab").classList.toggle("active", m==="buy");
-    $("sellTab").classList.toggle("active", m==="sell");
-    $("submitBtn").textContent = m==="buy" ? "记一笔收货" : "记一笔卖货";
-  }
-
-  function calcAmount(r){ return Number(r.qty)*Number(r.price) + (r.type==="buy" ? Number(r.fee||0) : -Number(r.fee||0)); }
-  function gross(r){ return Number(r.qty)*Number(r.price); }
-
-  function renderStats(){
-    const t = todayStr();
-    let tb=0, ts=0, an=0;
-    rows.forEach(r=>{
-      const cash = r.type==="sell" ? gross(r)-Number(r.fee||0) : -(gross(r)+Number(r.fee||0));
-      an += cash;
-      if(r.date===t){
-        if(r.type==="buy") tb += gross(r)+Number(r.fee||0);
-        else ts += gross(r)-Number(r.fee||0);
-      }
-    });
-    const tn = ts-tb;
-    $("todayBuy").textContent = money(tb);
-    $("todaySell").textContent = money(ts);
-    $("todayNet").textContent = money(tn);
-    $("todayNet").className = tn>=0 ? "positive" : "negative";
-    $("allNet").textContent = money(an);
-    $("allNet").className = an>=0 ? "positive" : "negative";
-  }
-
-  function filteredRows(){
-    const tf=$("typeFilter").value, df=$("dateFilter").value, q=$("search").value.trim().toLowerCase();
-    return rows.filter(r=>{
-      if(tf && r.type!==tf) return false;
-      if(df && r.date!==df) return false;
-      if(q && !`${r.item} ${r.party||""} ${r.note||""}`.toLowerCase().includes(q)) return false;
-      return true;
-    }).sort((a,b)=>(b.date+b.createdAt).localeCompare(a.date+a.createdAt));
-  }
-
-  function esc(s){
-    return String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[c]));
-  }
-
-  function render(){
-    renderStats();
-    const list=filteredRows(), body=$("tbody");
-    body.innerHTML="";
-    $("empty").style.display=list.length?"none":"block";
-    list.forEach(r=>{
-      const tr=document.createElement("tr");
-      const total = r.type==="buy" ? gross(r)+Number(r.fee||0) : gross(r)-Number(r.fee||0);
-      tr.innerHTML=`
-        <td>${esc(r.date)}</td>
-        <td><span class="pill ${r.type}">${r.type==="buy"?"收货":"卖货"}</span></td>
-        <td>${esc(r.item)}</td>
-        <td>${esc(r.qty)}</td>
-        <td>${money(r.price)}</td>
-        <td>${money(r.fee||0)}</td>
-        <td><b>${money(total)}</b></td>
-        <td>${esc(r.party||"")}</td>
-        <td>${esc(r.note||"")}</td>
-        <td><button class="danger" type="button" data-del="${r.id}">删除</button></td>`;
-      body.appendChild(tr);
-    });
-    body.querySelectorAll("[data-del]").forEach(btn=>{
-      btn.addEventListener("click",()=>{
-        if(confirm("确定删除这条记录吗？")){
-          rows=rows.filter(x=>x.id!==btn.dataset.del); save(); render();
-        }
-      });
-    });
-  }
-
-  $("entryForm").addEventListener("submit",e=>{
-    e.preventDefault();
-    const qty=Number($("qty").value), price=Number($("price").value), fee=Number($("fee").value||0);
-    if(!$("item").value.trim() || qty<=0 || price<0 || fee<0) return;
-    rows.push({
-      id: (crypto.randomUUID ? crypto.randomUUID() : String(Date.now())+Math.random()),
-      type:mode, item:$("item").value.trim(), qty, price, fee,
-      party:$("party").value.trim(), date:$("date").value,
-      note:$("note").value.trim(), createdAt:new Date().toISOString()
-    });
-    save();
-    $("item").value=""; $("price").value=""; $("fee").value="0"; $("party").value=""; $("note").value="";
-    $("item").focus();
-    render();
+  return {inv,enriched};
+}
+function go(id){
+  document.querySelectorAll('.view').forEach(v=>v.classList.toggle('active',v.id===id));
+  document.querySelectorAll('.navbtn').forEach(b=>b.classList.toggle('active',b.dataset.go===id));
+  if(id==='inventory')renderInventory();
+  if(id==='profit')renderProfit();
+  if(id==='ledger')renderLedger();
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+function openEntry(m,item=''){
+  setMode(m); $('eItem').value=item; $('eQty').value='1'; $('eFee').value='0'; $('eParty').value=''; $('eNote').value=''; $('ePay').value='paid'; $('eDate').value=today();
+  const p=presets.find(x=>x.name===item);
+  $('ePrice').value=p?(m==='buy'?p.buy:p.sell)||'':'';
+  $('entryModal').classList.add('open');
+  setTimeout(()=>$('eItem').focus(),50);
+}
+function closeModal(id){$(id).classList.remove('open')}
+function setMode(m){
+  mode=m;$('mBuy').classList.toggle('active',m==='buy');$('mSell').classList.toggle('active',m==='sell');
+  $('entryTitle').textContent=m==='buy'?'记一笔收货':'记一笔卖货';
+  $('saveEntry').textContent=m==='buy'?'保存收货':'保存卖货';
+  $('partyLabel').textContent=m==='buy'?'卖家':'客户';
+  $('payField').style.display=m==='sell'?'block':'none';
+  const p=presets.find(x=>x.name===$('eItem').value);
+  if(p)$('ePrice').value=(m==='buy'?p.buy:p.sell)||$('ePrice').value;
+}
+function renderHome(){
+  const {inv,enriched}=analysis(), t=today(), mk=t.slice(0,7);
+  let tb=0,ts=0,tp=0,pend=0,ms=0,mp=0;
+  enriched.forEach(e=>{
+    if(e.date===t){
+      if(e.type==='buy')tb+=gross(e)+Number(e.fee||0);
+      else{ts+=gross(e);tp+=e.profit}
+    }
+    if(e.type==='sell'&&e.payment==='unpaid')pend+=gross(e)-Number(e.fee||0);
+    if(e.type==='sell'&&monthKey(e.date)===mk){ms+=gross(e);mp+=e.profit}
   });
-
-  $("buyTab").addEventListener("click",()=>setMode("buy"));
-  $("sellTab").addEventListener("click",()=>setMode("sell"));
-  ["typeFilter","dateFilter","search"].forEach(id=>$(id).addEventListener("input",render));
-  $("clearFilter").addEventListener("click",()=>{$("typeFilter").value="";$("dateFilter").value="";$("search").value="";render();});
-
-  $("exportCsv").addEventListener("click",()=>{
-    const head=["日期","类型","商品","数量","单价","手续费/运费","总金额","客户/卖家","备注"];
-    const csv=[head,...rows.map(r=>[
-      r.date,r.type==="buy"?"收货":"卖货",r.item,r.qty,r.price,r.fee||0,
-      r.type==="buy"?gross(r)+Number(r.fee||0):gross(r)-Number(r.fee||0),r.party||"",r.note||""
-    ])].map(a=>a.map(x=>`"${String(x).replace(/"/g,'""')}"`).join(",")).join("\n");
-    download("\ufeff"+csv,"卡牌记账.csv","text/csv;charset=utf-8");
+  const stock=Object.values(inv).reduce((s,x)=>s+Math.max(0,x.qty)*x.avg,0);
+  const sku=Object.values(inv).filter(x=>x.qty>0.000001).length;
+  $('kTodayBuy').textContent=money(tb);$('kTodaySell').textContent=money(ts);$('kTodayProfit').textContent=money(tp);
+  $('kTodayProfit').className=tp>=0?'positive':'negative';$('kPending').textContent=money(pend);$('kStockValue').textContent=money(stock);$('kSku').textContent=sku;
+  $('kMonthSell').textContent=money(ms);$('kMonthProfit').textContent=money(mp);$('kMonthProfit').className=mp>=0?'positive':'negative';
+  renderPresets();
+  const recent=[...entries].sort((a,b)=>(b.date+(b.createdAt||'')).localeCompare(a.date+(a.createdAt||''))).slice(0,6);
+  $('recentList').innerHTML=recent.length?recent.map(e=>`<div class="row"><div><div class="name">${esc(e.item)}</div><div class="meta">${e.date} · ${e.type==='buy'?'收货':'卖货'} · ${e.qty} × ${money(e.price)}${e.type==='sell'&&e.payment==='unpaid'?' · 未付款':''}</div></div><div class="amt ${e.type==='sell'?'positive':'negative'}">${e.type==='sell'?'+':'-'}${money(gross(e)+(e.type==='buy'?Number(e.fee||0):-Number(e.fee||0)))}</div></div>`).join(''):'<div class="empty">还没有流水</div>';
+}
+function renderPresets(){
+  $('presetChips').innerHTML=presets.map(p=>`<button class="chip" data-preset="${escAttr(p.id)}">${esc(p.name)}</button>`).join('');
+  $('productList').innerHTML=presets.map(p=>`<option value="${escAttr(p.name)}"></option>`).join('');
+  document.querySelectorAll('[data-preset]').forEach(b=>b.addEventListener('click',()=>openEntry('sell',(presets.find(p=>p.id===b.dataset.preset)||{}).name||'')));
+}
+function renderPresetList(){
+  $('presetList').innerHTML=presets.length?presets.map(p=>`<div class="row"><div><div class="name">${esc(p.name)}</div><div class="meta">收货价 ${p.buy?money(p.buy):'未设'} · 卖价 ${p.sell?money(p.sell):'未设'}</div></div><button class="btn danger" data-del-p="${p.id}">删除</button></div>`).join(''):'<div class="empty">没有常用商品</div>';
+  document.querySelectorAll('[data-del-p]').forEach(b=>b.addEventListener('click',()=>{presets=presets.filter(p=>p.id!==b.dataset.delP);savePresets();renderPresetList();renderPresets()}));
+}
+function renderInventory(){
+  const {inv}=analysis();
+  const arr=Object.entries(inv).filter(([,x])=>Math.abs(x.qty)>0.000001).sort((a,b)=>b[1].value-a[1].value);
+  $('inventoryList').innerHTML=arr.length?arr.map(([name,x])=>`<div class="row"><div><div class="name">${esc(name)}</div><div class="meta">数量 ${fmtQty(x.qty)} · 平均成本 ${money(x.avg)}${x.qty<0?' · ⚠ 库存为负':''}</div></div><div class="amt ${x.qty<0?'negative':''}">${money(x.value)}</div></div>`).join(''):'<div class="empty">暂无库存</div>';
+}
+function renderProfit(){
+  const {enriched}=analysis(),t=today(),mk=t.slice(0,7);
+  let sales=0,cogs=0,fees=0,p=0,ms=0,mc=0,mf=0,mp=0;
+  enriched.filter(e=>e.type==='sell').forEach(e=>{
+    if(e.date===t){sales+=gross(e);cogs+=e.cogs;fees+=Number(e.fee||0);p+=e.profit}
+    if(monthKey(e.date)===mk){ms+=gross(e);mc+=e.cogs;mf+=Number(e.fee||0);mp+=e.profit}
   });
+  $('pTodaySales').textContent=money(sales);$('pTodayCogs').textContent=money(cogs);$('pTodayFees').textContent=money(fees);$('pTodayProfit').textContent=money(p);$('pTodayProfit').className=p>=0?'positive':'negative';
+  $('monthProfitDetail').innerHTML=`<div class="row"><div class="name">本月销售额</div><div class="amt">${money(ms)}</div></div><div class="row"><div class="name">销售商品成本</div><div class="amt">${money(mc)}</div></div><div class="row"><div class="name">手续费 / 运费</div><div class="amt">${money(mf)}</div></div><div class="row"><div class="name">本月毛利润</div><div class="amt ${mp>=0?'positive':'negative'}">${money(mp)}</div></div>`;
+}
+function filtered(){
+  const ft=$('fType').value,fp=$('fPay').value,q=$('fSearch').value.trim().toLowerCase();
+  return [...entries].filter(e=>{
+    if(ft&&e.type!==ft)return false;if(fp&&(e.type!=='sell'||e.payment!==fp))return false;
+    if(q&&!`${e.item} ${e.party||''} ${e.note||''}`.toLowerCase().includes(q))return false;return true;
+  }).sort((a,b)=>(b.date+(b.createdAt||'')).localeCompare(a.date+(a.createdAt||'')));
+}
+function renderLedger(){
+  const list=filtered();
+  $('ledgerBody').innerHTML=list.map(e=>`<tr><td>${e.date}</td><td><span class="badge ${e.type}">${e.type==='buy'?'收货':'卖货'}</span></td><td>${esc(e.item)}</td><td>${fmtQty(e.qty)}</td><td>${money(e.price)}</td><td>${money(e.fee||0)}</td><td>${money(gross(e))}</td><td>${e.type==='sell'?`<span class="badge ${e.payment==='unpaid'?'unpaid':'paid'}">${e.payment==='unpaid'?'未付款':'已付款'}</span>`:'-'}</td><td>${esc(e.party||'')}</td><td><button class="btn danger" data-del="${e.id}">删除</button></td></tr>`).join('');
+  document.querySelectorAll('[data-del]').forEach(b=>b.addEventListener('click',()=>{if(confirm('确定删除这条流水吗？')){entries=entries.filter(e=>e.id!==b.dataset.del);save();renderAll()}}));
+}
+function renderAll(){renderHome();if($('inventory').classList.contains('active'))renderInventory();if($('profit').classList.contains('active'))renderProfit();if($('ledger').classList.contains('active'))renderLedger()}
+function esc(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[c]))}
+function escAttr(s){return esc(s).replace(/"/g,'&quot;')}
+function fmtQty(n){return Number.isInteger(Number(n))?String(Number(n)):Number(n).toFixed(2).replace(/0+$/,'').replace(/\.$/,'')}
+function download(content,name,type){const blob=new Blob([content],{type}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(url),1000)}
 
-  $("exportJson").addEventListener("click",()=>download(JSON.stringify(rows,null,2),"卡牌记账备份.json","application/json"));
-  $("importBtn").addEventListener("click",()=>$("importFile").click());
-  $("importFile").addEventListener("change",e=>{
-    const f=e.target.files[0]; if(!f)return;
-    const rd=new FileReader();
-    rd.onload=()=>{
-      try{
-        const data=JSON.parse(rd.result);
-        if(!Array.isArray(data)) throw new Error();
-        if(confirm(`读取到 ${data.length} 条记录。确定覆盖当前数据吗？`)){
-          rows=data;save();render();
-        }
-      }catch{alert("备份文件格式不正确。")}
-    };
-    rd.readAsText(f);
-    e.target.value="";
-  });
-
-  function download(content,name,type){
-    const blob=new Blob([content],{type});
-    const url=URL.createObjectURL(blob);
-    const a=document.createElement("a");a.href=url;a.download=name;a.click();
-    setTimeout(()=>URL.revokeObjectURL(url),1000);
-  }
-
-  $("date").value=todayStr();
-  load(); setMode("buy"); render();
+document.querySelectorAll('[data-go]').forEach(b=>b.addEventListener('click',()=>go(b.dataset.go)));
+document.querySelectorAll('[data-close]').forEach(b=>b.addEventListener('click',()=>closeModal(b.dataset.close)));
+$('qBuy').addEventListener('click',()=>openEntry('buy'));$('qSell').addEventListener('click',()=>openEntry('sell'));
+$('mBuy').addEventListener('click',()=>setMode('buy'));$('mSell').addEventListener('click',()=>setMode('sell'));
+$('eItem').addEventListener('change',()=>{const p=presets.find(x=>x.name===$('eItem').value);if(p)$('ePrice').value=(mode==='buy'?p.buy:p.sell)||$('ePrice').value});
+$('entryForm').addEventListener('submit',e=>{
+  e.preventDefault();
+  const item=$('eItem').value.trim(),qty=Number($('eQty').value),price=Number($('ePrice').value),fee=Number($('eFee').value||0);
+  if(!item||qty<=0||price<0||fee<0)return alert('请检查商品、数量和价格');
+  entries.push({id:uid(),type:mode,item,qty,price,fee,party:$('eParty').value.trim(),date:$('eDate').value,note:$('eNote').value.trim(),payment:mode==='sell'?$('ePay').value:'paid',createdAt:new Date().toISOString()});
+  save();closeModal('entryModal');renderAll();
+});
+$('managePresets').addEventListener('click',()=>{$('presetModal').classList.add('open');renderPresetList()});
+$('presetForm').addEventListener('submit',e=>{
+  e.preventDefault();const name=$('pName').value.trim();if(!name)return;
+  if(presets.some(p=>p.name===name))return alert('这个商品已经存在');
+  presets.push({id:uid(),name,buy:$('pBuy').value,sell:$('pSell').value});savePresets();$('presetForm').reset();renderPresetList();renderPresets();
+});
+['fType','fPay','fSearch'].forEach(id=>$(id).addEventListener('input',renderLedger));
+$('backupJson').addEventListener('click',()=>download(JSON.stringify({version:2,entries,presets},null,2),'卡牌账本V2备份.json','application/json'));
+$('restoreJson').addEventListener('click',()=>$('restoreFile').click());
+$('restoreFile').addEventListener('change',e=>{
+  const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=()=>{try{const d=JSON.parse(r.result);const en=Array.isArray(d)?d:d.entries;if(!Array.isArray(en))throw 0;if(confirm(`读取到 ${en.length} 条流水，确定覆盖当前数据吗？`)){entries=en;presets=Array.isArray(d.presets)?d.presets:presets;save();savePresets();renderAll()}}catch{alert('备份文件格式不正确')}};r.readAsText(f);e.target.value='';
+});
+$('exportCsv').addEventListener('click',()=>{
+  const rows=[['日期','类型','商品','数量','单价','费用','交易金额','付款状态','客户/卖家','备注'],...entries.map(e=>[e.date,e.type==='buy'?'收货':'卖货',e.item,e.qty,e.price,e.fee||0,gross(e),e.type==='sell'?(e.payment==='unpaid'?'未付款':'已付款'):'',e.party||'',e.note||''])];
+  const csv='\ufeff'+rows.map(r=>r.map(x=>`"${String(x).replace(/"/g,'""')}"`).join(',')).join('\n');download(csv,'卡牌账本流水.csv','text/csv;charset=utf-8');
+});
+$('importV1').addEventListener('click',()=>{
+  let old=[];try{old=JSON.parse(localStorage.getItem(OLD_KEY)||'[]')}catch{}
+  if(!Array.isArray(old)||!old.length)return alert('没有发现 V1 数据');
+  if(!confirm(`发现 ${old.length} 条旧版记录，是否追加导入？`))return;
+  const ids=new Set(entries.map(e=>e.id));
+  old.forEach(o=>{if(!ids.has(o.id))entries.push({...o,payment:o.type==='sell'?'paid':'paid'})});save();renderAll();$('v1Hint').textContent=`已导入 ${old.length} 条旧版记录`;
+});
+document.querySelectorAll('.modal').forEach(m=>m.addEventListener('click',e=>{if(e.target===m)m.classList.remove('open')}));
+load();$('eDate').value=today();renderAll();
+if('serviceWorker' in navigator)window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js').catch(()=>{}));
 })();
 </script>
-
-<script>
-if ('serviceWorker' in navigator) {
-  window.addEventListener('load', () => {
-    navigator.serviceWorker.register('./sw.js').catch(() => {});
-  });
-}
-</script>
-
 </body>
 </html>
