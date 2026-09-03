@@ -1,28 +1,21 @@
-卡牌收货·卖货·库存 完整重建版
+V2.4 手机/电脑云同步版
 
-已恢复/重建：
-- 系列：OP17 / OP16 / OP15 / OP14 / OP13 / EB04 / EB03 / 高达 / 其他
-- 种类：散包 / 原膜 / 垃圾袋 / 切口
-- 数量单位：包 / 手（1手=24包）
-- 收货自动增加库存
-- 卖货自动扣库存
-- 手动库存调整
-- 移动平均库存成本
-- 今日利润 / 本月利润
-- 库存包数 / 库存成本
-- 收货价格使用日元
-- 卖货价格直接输入人民币
-- 成交汇率 CNY→JPY，自动折合日元并保存历史汇率
-- 搜索 / 筛选 / 删除后自动重算
-- JSON备份与恢复
-- CSV导出
-- 手机响应式布局
-- PWA，可添加到手机主屏幕
+需要 Firebase：
+1. Authentication 开启 Email/Password
+2. Firestore Database 已创建
+3. 设置页填写 apiKey、authDomain、projectId、appId
+4. 电脑和手机使用同一个邮箱账号登录
+5. 第一次先在电脑“上传本机数据到云端”，手机再“从云端恢复到本机”
+6. 之后自动同步
 
-GitHub Pages：
-把本压缩包解压后的全部文件上传到仓库根目录。
+建议 Firestore Rules：
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /cardLedgerUsers/{userId} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+    }
+  }
+}
 
-重要：
-这份恢复包没有擅自写入另一个软件的 Firebase 项目配置。
-因为之前“收卡软件”的 Firebase 配置文件本身没有恢复到当前可访问文件中。
-先确保核心收货/库存/利润功能完整，再接回该软件自己的 Firebase，可避免再次串到客户账单项目。
+启用同步前请先备份 JSON。
