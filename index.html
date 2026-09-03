@@ -1,84 +1,255 @@
-<!doctype html>
-<html lang="zh-CN"><head>
-<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>卡牌收货·卖货·库存</title>
-<meta name="theme-color" content="#111827"><meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-title" content="卡牌库存"><link rel="manifest" href="manifest.webmanifest"><link rel="apple-touch-icon" href="icon-192.png">
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#2563eb">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="直播账本">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icon-192.png">
+<title>直播客户账本 V7 手机适配版</title>
 <style>
-:root{--bg:#f4f6fa;--card:#fff;--line:#e5e7eb;--txt:#111827;--muted:#6b7280;--blue:#2563eb;--green:#15803d;--red:#dc2626}
-*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--txt);font-family:system-ui,-apple-system,"Segoe UI",sans-serif}
-.wrap{max-width:1180px;margin:auto;padding:18px}.top{display:flex;justify-content:space-between;gap:12px;align-items:center}
-h1{font-size:25px;margin:0}.sub{color:var(--muted);font-size:13px;margin-top:4px}.btn{border:0;border-radius:9px;padding:10px 14px;font-weight:700;cursor:pointer}
-.primary{background:var(--blue);color:#fff}.secondary{background:#eef2f7;color:#1f2937}.danger{background:#fee2e2;color:#991b1b}
-.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin:14px 0}.stat,.card{background:var(--card);border:1px solid var(--line);border-radius:14px}
-.stat{padding:14px}.stat .k{font-size:12px;color:var(--muted)}.stat .v{font-size:21px;font-weight:800;margin-top:4px}
-.tabs{display:flex;gap:7px;margin-bottom:12px}.tab{flex:1}.tab.active{background:#111827;color:#fff}
-.grid{display:grid;grid-template-columns:360px 1fr;gap:12px}.card{padding:15px}h2{font-size:17px;margin:0 0 12px}
-.formgrid{display:grid;grid-template-columns:1fr 1fr;gap:9px}label{font-size:12px;color:#4b5563;display:block;margin:0 0 5px}
-input,select,textarea{width:100%;padding:10px;border:1px solid #d1d5db;border-radius:9px;background:#fff;font-size:14px}
-textarea{min-height:65px}.wide{grid-column:1/-1}.hint{font-size:11px;color:var(--muted);margin-top:4px}
-.toolbar{display:flex;gap:7px;flex-wrap:wrap;margin-bottom:10px}.toolbar input{flex:1;min-width:180px}.tablewrap{overflow:auto}
-table{width:100%;border-collapse:collapse;min-width:900px}th,td{padding:9px 7px;border-bottom:1px solid var(--line);text-align:left;font-size:12px;vertical-align:top}th{color:#6b7280}
-.pill{display:inline-block;padding:3px 7px;border-radius:999px;font-size:11px;font-weight:700}.buy{background:#dbeafe;color:#1d4ed8}.sell{background:#dcfce7;color:#166534}
-.pos{color:var(--green)}.neg{color:var(--red)}.section{margin-top:12px}.stockgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
-.stockitem{border:1px solid var(--line);border-radius:10px;padding:10px}.stockitem b{display:block}.stockitem small{color:var(--muted)}
-.actions{display:flex;gap:4px;flex-wrap:wrap}.actions button{padding:6px 8px;font-size:11px}.foot{font-size:11px;color:var(--muted);margin-top:12px}
-@media(max-width:720px){.wrap{padding:8px}.top{display:block}.top .toolbar{margin-top:8px}.stats{grid-template-columns:1fr 1fr;gap:7px}.stat{padding:11px}.stat .v{font-size:17px}.grid{display:block}.grid>.card{margin-bottom:9px}.formgrid{grid-template-columns:1fr 1fr}.stockgrid{grid-template-columns:1fr 1fr}
-.tablewrap{overflow:visible}table{display:block;min-width:0}thead{display:none}tbody{display:block}tbody tr{display:grid;grid-template-columns:1fr auto;gap:4px 8px;border:1px solid var(--line);border-radius:11px;padding:10px;margin-bottom:8px}tbody td{border:0;padding:1px;display:block}tbody td:nth-child(3){grid-column:1/-1;font-weight:800;font-size:14px}.actions{grid-column:1/-1}}
-</style></head><body><div class="wrap">
-<div class="top"><div><h1>📦 卡牌收货 · 卖货 · 库存</h1><div class="sub">完整版重建 · 收货JPY / 卖货CNY→JPY / 库存 / 今日利润 / 本月利润</div></div>
-<div class="toolbar"><button class="btn secondary" onclick="exportData()">备份</button><label class="btn secondary" style="margin:0">恢复<input type="file" id="restoreFile" accept=".json" hidden></label><button class="btn secondary" onclick="exportCSV()">CSV</button></div></div>
-<div class="stats">
-<div class="stat"><div class="k">今日利润</div><div class="v" id="todayProfit">¥0</div></div>
-<div class="stat"><div class="k">本月利润</div><div class="v" id="monthProfit">¥0</div></div>
-<div class="stat"><div class="k">库存包数</div><div class="v" id="stockPacks">0</div></div>
-<div class="stat"><div class="k">库存成本</div><div class="v" id="stockCost">¥0</div></div>
+:root{--bg:#f4f6fa;--card:#fff;--text:#172033;--muted:#70798b;--line:#e7eaf0;--blue:#2563eb;--red:#dc2626;--green:#16a34a;--orange:#d97706}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif}
+.app{max-width:1200px;margin:auto;padding:16px}.top{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:14px}
+h1{font-size:25px;margin:0}.hint{font-size:13px;color:var(--muted);margin-top:4px}
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:14px}
+.stat,.card{background:#fff;border:1px solid var(--line);border-radius:15px;box-shadow:0 2px 8px rgba(20,30,50,.035)}
+.stat{padding:15px}.stat small{color:var(--muted)}.stat strong{display:block;font-size:23px;margin-top:5px}.red{color:var(--red)}.green{color:var(--green)}
+.layout{display:grid;grid-template-columns:360px 1fr;gap:14px}.card{padding:15px}h2{font-size:17px;margin:0 0 12px}
+label{display:block;font-size:12px;color:#596174;margin:9px 0 5px}input,select,textarea,button{font:inherit}
+input,select,textarea{width:100%;padding:10px;border:1px solid #d5dae3;border-radius:9px;background:#fff}textarea{min-height:58px;resize:vertical}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:8px}.btn{border:0;border-radius:9px;padding:10px 12px;font-weight:650;cursor:pointer}
+.primary{background:var(--blue);color:#fff}.full{width:100%;margin-top:12px}.soft{background:#eef2ff;color:#3730a3}.danger{background:#fee2e2;color:#991b1b}.ok{background:#dcfce7;color:#166534}
+.customers{margin-top:15px;border-top:1px solid var(--line);padding-top:12px}.cust{padding:10px 8px;border-bottom:1px dashed var(--line);display:flex;justify-content:space-between;cursor:pointer;border-radius:8px}.cust:hover{background:#f7f9fc}
+.toolbar{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px}.toolbar input,.toolbar select{width:auto;min-width:135px}
+.tablewrap{overflow:auto;border:1px solid var(--line);border-radius:10px;max-height:580px}table{width:100%;border-collapse:collapse;font-size:13px;white-space:nowrap}
+th,td{padding:9px 8px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}th{background:#fafbfc;color:var(--muted);position:sticky;top:0}
+.badge{font-size:11px;padding:3px 7px;border-radius:99px;font-weight:700}.unpaid{background:#fee2e2;color:#991b1b}.partial{background:#fef3c7;color:#92400e}.paid{background:#dcfce7;color:#166534}
+.mini{border:0;border-radius:7px;padding:6px 8px;margin:1px;cursor:pointer;font-size:12px}
+#customerPage{display:none}.back{margin-bottom:12px}.customerHead{display:flex;justify-content:space-between;gap:10px;align-items:flex-start;margin-bottom:12px}
+.bigName{font-size:25px;font-weight:800}.summary{display:grid;grid-template-columns:repeat(4,1fr);gap:9px;margin-bottom:14px}.sum{background:#f8fafc;border:1px solid var(--line);padding:12px;border-radius:11px}.sum small{color:var(--muted)}.sum strong{display:block;font-size:19px;margin-top:4px}
+.empty{color:var(--muted);padding:14px;text-align:center}
+@media(max-width:850px){.layout{grid-template-columns:1fr}.stats,.summary{grid-template-columns:1fr 1fr}.app{padding:10px}}
+.cloudbar{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.cloudstate{font-size:12px;padding:5px 9px;border-radius:999px;background:#f3f4f6;color:#4b5563}
+.cloudstate.online{background:#dcfce7;color:#166534}.cloudstate.warn{background:#fef3c7;color:#92400e}
+.modal{position:fixed;inset:0;background:rgba(15,23,42,.46);display:none;align-items:center;justify-content:center;padding:16px;z-index:9999}
+.modal.show{display:flex}.modalbox{width:min(520px,100%);max-height:92vh;overflow:auto;background:white;border-radius:16px;padding:18px;box-shadow:0 20px 50px rgba(0,0,0,.2)}
+.modalbox h2{font-size:20px}.modalActions{display:flex;gap:8px;margin-top:14px}.modalActions .btn{flex:1}
+.cloudHelp{background:#f8fafc;border:1px solid var(--line);border-radius:10px;padding:10px;font-size:12px;color:#596174;line-height:1.6;margin-top:10px}
+@media(max-width:500px){h1{font-size:21px}.stat strong{font-size:19px}.two{grid-template-columns:1fr}.toolbar input,.toolbar select,.toolbar button{width:100%}.top{align-items:flex-start;flex-direction:column}.cloudbar{width:100%}.cloudbar .btn{flex:1}}
+
+@media(max-width:700px){
+body{padding:8px}.app{max-width:100%;margin:0}.top{flex-direction:column;align-items:stretch;gap:8px}.top h1{font-size:20px}
+.cloudbar{display:grid;grid-template-columns:1fr 1fr;width:100%;gap:6px}.cloudstate{grid-column:1/-1;text-align:center}
+.stats{grid-template-columns:1fr 1fr;gap:7px}.stat{padding:11px}.stat strong{font-size:18px}
+.layout{display:block}.panel{padding:11px;margin-bottom:9px}.left,.right{width:100%;min-width:0}.two{grid-template-columns:1fr 1fr;gap:7px}
+input,select,textarea{font-size:16px;padding:10px}.toolbar{display:grid;grid-template-columns:1fr 1fr;gap:6px}.toolbar input{grid-column:1/-1}.toolbar input,.toolbar select,.toolbar button{width:100%}
+.tablewrap{overflow:visible;border:0}table{display:block;width:100%;min-width:0}thead{display:none}tbody{display:block}
+tbody tr{display:grid;grid-template-columns:1fr auto;gap:5px 9px;margin-bottom:9px;padding:10px;border:1px solid #e7eaf0;border-radius:12px;background:#fff}
+tbody td{display:block;border:0!important;padding:1px 0!important;white-space:normal}
+tbody td:nth-child(1){font-size:12px;color:#667085}tbody td:nth-child(2){grid-column:2;grid-row:1;text-align:right;font-weight:700}
+tbody td:nth-child(3){grid-column:1/-1;font-size:15px;font-weight:700}tbody td:nth-child(5),tbody td:nth-child(7){text-align:right}
+tbody td:nth-child(7){font-weight:700}tbody td:nth-child(9){grid-column:1/-1;display:flex;gap:5px;flex-wrap:wrap;margin-top:4px}
+tbody td:nth-child(9) button{flex:1;min-width:60px;padding:8px 4px}.modal{padding:7px}.modalbox{padding:13px}
+}
+</style>
+</head>
+<body>
+<div class="app">
+<div id="mainPage">
+ <div class="top">
+   <div><h1>📒 直播客户账本</h1><div class="hint">中国客户 · 人民币记账 · 本地保存 + 云端同步 · <b style="color:#2563eb">V7 手机适配版</b></div></div>
+   <div class="cloudbar">
+     <span class="cloudstate warn" id="cloudState">☁️ 未连接云端</span>
+     <button class="btn soft" id="cloudLoginBtn" onclick="openCloudModal()">云同步 / 登录</button>
+     <button class="btn soft" id="cloudSyncBtn" onclick="manualCloudSync()" style="display:none">立即同步</button>
+     <button class="btn danger" id="cloudLogoutBtn" onclick="cloudLogout()" style="display:none">退出</button>
+   </div>
+ </div>
+ <div class="stats">
+  <div class="stat"><small>累计消费</small><strong id="sTotal">¥0.00</strong></div>
+  <div class="stat"><small>当前未收</small><strong class="red" id="sDue">¥0.00</strong></div>
+  <div class="stat"><small>已收/抵扣</small><strong id="sPaid">¥0.00</strong></div>
+  <div class="stat"><small>客户人数</small><strong id="sCustomers">0</strong></div>
+ </div>
+ <div class="layout">
+  <div class="card">
+   <h2>新增消费记录</h2>
+   <label>客户名称 / 直播ID</label><input id="customer" list="names" placeholder="输入客户名"><datalist id="names"></datalist>
+   <div class="two"><div><label>日期</label><input type="date" id="date"></div><div><label>系列</label><select id="series"><option>高达</option><option>OP17</option><option>OP16</option><option>OP15</option><option>OP14</option><option>OP13</option><option>EB04</option><option>EB03</option><option>其他</option></select></div></div>
+   <div class="two"><div><label>种类</label><select id="type"><option>盒</option><option>散包</option><option>原膜</option><option>垃圾袋</option><option>切口</option><option>其他</option></select></div><div><label>数量</label><input type="number" id="qty" min="0" step="1" placeholder="例如 24"></div></div>
+   <div class="two"><div><label>单位</label><select id="unit"><option value="包">包（1包）</option><option value="手">手（24包）</option><option value="盒">盒（1盒）</option><option value="个">个（1个）</option></select></div><div><label>计价方式</label><select id="priceMode"><option value="unit">按当前单位计价</option><option value="pack">按每包计价</option></select></div></div>
+   <div class="hint" style="margin:6px 0 2px">例：1手 × 720元/手，或 1手 × 24包 × 30元/包</div><div class="two"><div><label>单价（人民币）</label><input type="number" id="price" min="0" step="0.01" placeholder="例如 30"></div><div><label>金额</label><input id="preview" disabled value="¥0.00"></div></div>
+   <label>备注</label><textarea id="note" placeholder="例如：等直播结束统一付款"></textarea>
+   <button class="btn primary full" onclick="addBill()">＋ 添加到客户账单</button>
+   <div class="customers"><h2>客户账单</h2><div id="customerList"></div></div>
+  </div>
+  <div class="card">
+   <h2>全部记录</h2>
+   <div class="toolbar"><input id="search" placeholder="搜索客户" oninput="renderMain()"><select id="filter" onchange="renderMain()"><option value="">全部状态</option><option value="unpaid">未付款</option><option value="partial">部分付款</option><option value="paid">已付款</option></select><button class="btn soft" onclick="exportCSV()">导出CSV</button><button class="btn soft" onclick="backup()">备份数据</button></div>
+   <div class="tablewrap"><table><thead><tr><th>日期</th><th>客户</th><th>商品</th><th>消费</th><th>已付款</th><th>买取抵扣</th><th>还需付款</th><th>状态</th><th>操作</th></tr></thead><tbody id="tbody"></tbody></table></div>
+  </div>
+ </div>
 </div>
-<div class="grid">
-<section class="card">
-<div class="tabs"><button id="buyTab" class="btn tab active" onclick="setMode('buy')">📥 收货</button><button id="sellTab" class="btn tab secondary" onclick="setMode('sell')">📤 卖货</button></div>
-<div class="formgrid">
-<div><label>日期</label><input id="date" type="date"></div>
-<div><label>系列</label><select id="series"><option>OP17</option><option>OP16</option><option>OP15</option><option>OP14</option><option>OP13</option><option>EB04</option><option>EB03</option><option>高达</option><option>其他</option></select></div>
-<div><label>种类</label><select id="kind"><option>散包</option><option>原膜</option><option>垃圾袋</option><option>切口</option></select></div>
-<div><label>数量</label><input id="qty" type="number" min="0" step="1" placeholder="例如 24"></div>
-<div><label>单位</label><select id="unit"><option value="pack">包</option><option value="hand">手（24包）</option></select></div>
-<div><label id="priceLabel">收货单价（日元/所选单位）</label><input id="price" type="number" min="0" step="0.01"></div>
-<div id="fxBox" style="display:none"><label>成交汇率 1 CNY = ? JPY</label><input id="fx" type="number" min="0" step="0.0001" placeholder="例如 20.50"></div>
-<div id="jpyBox" style="display:none"><label>卖货折合日元</label><input id="jpyPreview" disabled value="¥0"></div>
-<div class="wide"><label>客户 / 卖家</label><input id="party" placeholder="可选"></div>
-<div class="wide"><label>备注</label><textarea id="note" placeholder="可选"></textarea></div>
+
+<div id="customerPage">
+ <button class="btn soft back" onclick="backMain()">← 返回全部客户</button>
+ <div class="card">
+  <div class="customerHead"><div><div class="bigName" id="cpName"></div><div class="hint">客户独立账单 · 所有金额为人民币</div></div><button class="btn ok" onclick="settleCustomer()">一键结清</button></div>
+  <div class="summary"><div class="sum"><small>总消费</small><strong id="cpTotal"></strong></div><div class="sum"><small>已转账</small><strong id="cpPaid"></strong></div><div class="sum"><small>买取抵扣</small><strong id="cpBuy"></strong></div><div class="sum"><small>当前欠款</small><strong class="red" id="cpDue"></strong></div></div>
+  <div class="toolbar"><button class="btn ok" onclick="customerPayment()">＋ 记录客户转账</button><button class="btn soft" onclick="customerBuyback()">＋ 记录买取抵扣</button></div>
+  <div class="tablewrap"><table><thead><tr><th>日期</th><th>内容</th><th>数量</th><th>单价</th><th>消费金额</th><th>已付款</th><th>买取抵扣</th><th>剩余</th><th>备注</th><th>操作</th></tr></thead><tbody id="cpBody"></tbody></table></div>
+ </div>
 </div>
-<div class="hint">1手固定按24包换算库存。收货成本采用移动平均成本；卖货利润按卖出时库存平均成本计算。</div>
-<button id="submitBtn" class="btn primary" style="width:100%;margin-top:11px" onclick="addTxn()">记一笔收货</button>
-</section>
-<section>
-<div class="card"><h2>当前库存</h2><div id="stockGrid" class="stockgrid"></div></div>
-<div class="card section"><h2>交易记录</h2>
-<div class="toolbar"><input id="search" placeholder="搜索系列、种类、客户、备注" oninput="render()"><select id="filter" onchange="render()"><option value="">全部</option><option value="buy">收货</option><option value="sell">卖货</option></select></div>
-<div class="tablewrap"><table><thead><tr><th>日期</th><th>类型</th><th>商品</th><th>数量</th><th>成交价</th><th>折合JPY</th><th>利润JPY</th><th>客户/卖家</th><th>操作</th></tr></thead><tbody id="tbody"></tbody></table></div>
-</div></section></div>
-<div class="foot">数据默认保存在当前浏览器。建议定期“备份”。删除交易后会自动重算库存和利润。</div>
 </div>
+
+<div class="modal" id="cloudModal">
+ <div class="modalbox">
+   <h2>☁️ 云同步设置</h2>
+   <div class="hint">Firebase 已经配置完成。手机和电脑只需要登录同一个账号，即可同步同一份账单。</div>
+
+   <div class="cloudHelp">
+     Firebase 已内置连接到 <b>live-customer-ledger</b>。<br>
+     手机、电脑或新设备只需要输入同一个邮箱和密码即可同步，不需要再填写 Firebase 参数。
+   </div>
+
+   <hr style="border:0;border-top:1px solid #e7eaf0;margin:16px 0">
+   <h2 style="font-size:17px">账号</h2>
+   <label>邮箱</label><input type="email" id="cloudEmail" placeholder="你的邮箱">
+   <label>密码</label><input type="password" id="cloudPassword" placeholder="至少 6 位密码">
+   <div class="modalActions">
+      <button class="btn soft" onclick="closeCloudModal()">取消</button>
+      <button class="btn soft" onclick="cloudRegister()">注册</button>
+      <button class="btn primary" onclick="cloudLogin()">登录并同步</button>
+   </div>
+   <div class="hint" id="cloudMessage" style="margin-top:10px"></div>
+ </div>
+</div>
+
 <script>
-(()=>{const KEY='card_inventory_full_v1',FX='card_inventory_fx_v1';let rows=[],mode='buy';const $=id=>document.getElementById(id);
-const yen=n=>'¥'+Math.round(Number(n)||0).toLocaleString('ja-JP');const today=()=>{let d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')};
-function packs(q,u){return Number(q||0)*(u==='hand'?24:1)}function esc(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
-function load(){try{rows=JSON.parse(localStorage.getItem(KEY)||'[]');if(!Array.isArray(rows))rows=[]}catch{rows=[]}}function save(){localStorage.setItem(KEY,JSON.stringify(rows))}
-window.setMode=m=>{mode=m;$('buyTab').className='btn tab '+(m==='buy'?'active':'secondary');$('sellTab').className='btn tab '+(m==='sell'?'active':'secondary');$('fxBox').style.display=$('jpyBox').style.display=m==='sell'?'block':'none';$('priceLabel').textContent=m==='buy'?'收货单价（日元/所选单位）':'卖货单价（人民币/所选单位）';$('submitBtn').textContent=m==='buy'?'记一笔收货':'记一笔卖货';preview()}
-function preview(){let q=Number($('qty').value||0),p=Number($('price').value||0),r=Number($('fx').value||0);$('jpyPreview').value=yen(q*p*r)}['qty','price','fx'].forEach(x=>$(x).addEventListener('input',preview));
-function recalc(){let stock={},out=[];for(const r of [...rows].sort((a,b)=>(a.createdAt||'').localeCompare(b.createdAt||''))){let k=r.series+'|'+r.kind,s=stock[k]||{packs:0,cost:0};let pks=packs(r.qty,r.unit);if(r.type==='buy'){let total=Number(r.totalJPY||0);s.packs+=pks;s.cost+=total;r.profitJPY=0}else{let avg=s.packs>0?s.cost/s.packs:0,cost=Math.min(pks,s.packs)*avg;let rev=Number(r.totalJPY||0);r.profitJPY=rev-cost;s.cost=Math.max(0,s.cost-cost);s.packs=Math.max(0,s.packs-pks)}stock[k]=s;out.push(r)}return stock}
-window.addTxn=()=>{let q=Number($('qty').value),p=Number($('price').value),u=$('unit').value;if(q<=0||p<0)return alert('请填写正确数量和价格');let fx=Number($('fx').value||0);if(mode==='sell'&&fx<=0)return alert('卖货时请填写成交汇率');if(mode==='sell')localStorage.setItem(FX,String(fx));let total=mode==='sell'?q*p*fx:q*p;rows.push({id:crypto.randomUUID?crypto.randomUUID():Date.now()+''+Math.random(),date:$('date').value,series:$('series').value,kind:$('kind').value,qty:q,unit:u,price:p,currency:mode==='sell'?'CNY':'JPY',fxRate:mode==='sell'?fx:null,totalJPY:total,type:mode,party:$('party').value.trim(),note:$('note').value.trim(),createdAt:new Date().toISOString()});save();$('qty').value='';$('price').value='';$('party').value='';$('note').value='';preview();render()}
-window.del=id=>{if(confirm('删除这笔记录？删除后会自动重算库存和利润。')){rows=rows.filter(r=>r.id!==id);save();render()}}
-window.editStock=(series,kind)=>{let v=prompt(series+' / '+kind+'\\n输入要增加/减少的库存包数（例如 24 或 -24）');if(v===null)return;let n=Number(v);if(!n)return;rows.push({id:crypto.randomUUID?crypto.randomUUID():Date.now()+'',date:today(),series,kind,qty:Math.abs(n),unit:'pack',price:0,currency:'JPY',fxRate:null,totalJPY:0,type:n>0?'buy':'sell',party:'库存调整',note:'手动库存调整',createdAt:new Date().toISOString()});save();render()}
-function render(){let stock=recalc(),t=today(),m=t.slice(0,7),tp=0,mp=0;rows.forEach(r=>{if(r.type==='sell'){if(r.date===t)tp+=Number(r.profitJPY||0);if((r.date||'').startsWith(m))mp+=Number(r.profitJPY||0)}});$('todayProfit').textContent=yen(tp);$('todayProfit').className='v '+(tp>=0?'pos':'neg');$('monthProfit').textContent=yen(mp);$('monthProfit').className='v '+(mp>=0?'pos':'neg');let sp=0,sc=0;Object.values(stock).forEach(s=>{sp+=s.packs;sc+=s.cost});$('stockPacks').textContent=Math.round(sp).toLocaleString();$('stockCost').textContent=yen(sc);
-let sg=$('stockGrid');sg.innerHTML='';Object.entries(stock).filter(([k,s])=>s.packs>0).sort().forEach(([k,s])=>{let [series,kind]=k.split('|'),d=document.createElement('div');d.className='stockitem';d.innerHTML=`<b>${esc(series)} · ${esc(kind)}</b><small>${Math.round(s.packs)}包 · 平均成本 ${yen(s.packs?s.cost/s.packs:0)}/包</small><br><button class="btn secondary" style="margin-top:6px;padding:5px 8px" onclick="editStock('${esc(series)}','${esc(kind)}')">调整库存</button>`;sg.appendChild(d)});if(!sg.children.length)sg.innerHTML='<span class="sub">暂无库存</span>';
-let q=$('search').value.trim().toLowerCase(),f=$('filter').value,list=[...rows].filter(r=>(!f||r.type===f)&&(!q||`${r.series} ${r.kind} ${r.party} ${r.note}`.toLowerCase().includes(q))).sort((a,b)=>(b.date+b.createdAt).localeCompare(a.date+a.createdAt));$('tbody').innerHTML=list.map(r=>`<tr><td>${esc(r.date)}</td><td><span class="pill ${r.type}">${r.type==='buy'?'收货':'卖货'}</span></td><td>${esc(r.series)} · ${esc(r.kind)}</td><td>${r.qty}${r.unit==='hand'?'手':'包'}${r.unit==='hand'?` (${packs(r.qty,r.unit)}包)`:''}</td><td>${r.type==='sell'?Number(r.price).toLocaleString('zh-CN')+' CNY':yen(r.price)}${r.fxRate?`<br><small>汇率 ${r.fxRate}</small>`:''}</td><td>${yen(r.totalJPY)}</td><td class="${Number(r.profitJPY||0)>=0?'pos':'neg'}">${r.type==='sell'?yen(r.profitJPY):'—'}</td><td>${esc(r.party||'')}</td><td class="actions"><button class="btn danger" onclick="del('${r.id}')">删除</button></td></tr>`).join('')}
-window.render=render;
-window.exportData=()=>{let b=new Blob([JSON.stringify({version:1,rows},null,2)],{type:'application/json'}),a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='卡牌库存备份_'+today()+'.json';a.click();URL.revokeObjectURL(a.href)}
-$('restoreFile').onchange=async e=>{let f=e.target.files[0];if(!f)return;try{let x=JSON.parse(await f.text());let rr=Array.isArray(x)?x:x.rows;if(!Array.isArray(rr))throw 0;if(confirm('恢复会覆盖当前本地数据，继续？')){rows=rr;save();render()}}catch{alert('备份文件格式不正确')}e.target.value=''}
-window.exportCSV=()=>{recalc();let h=['日期','类型','系列','种类','数量','单位','成交价','币种','汇率','折合日元','利润日元','客户/卖家','备注'],a=[h,...rows.map(r=>[r.date,r.type==='buy'?'收货':'卖货',r.series,r.kind,r.qty,r.unit==='hand'?'手(24包)':'包',r.price,r.currency,r.fxRate||'',r.totalJPY,r.profitJPY||0,r.party||'',r.note||''])],csv='\ufeff'+a.map(x=>x.map(v=>`"${String(v).replaceAll('"','""')}"`).join(',')).join('\n'),b=new Blob([csv],{type:'text/csv;charset=utf-8'}),x=document.createElement('a');x.href=URL.createObjectURL(b);x.download='卡牌交易_'+today()+'.csv';x.click();URL.revokeObjectURL(x.href)}
-$('date').value=today();$('fx').value=localStorage.getItem(FX)||'';load();setMode('buy');render();
-if('serviceWorker'in navigator)window.addEventListener('load',()=>navigator.serviceWorker.register('./service-worker.js?v=1').catch(()=>{}));
-})();
-</script></body></html>
+const KEY='live_customer_bills_v2_cny';
+let bills=JSON.parse(localStorage.getItem(KEY)||'[]'), activeCustomer='';
+const DELETED_KEY='live_customer_bills_deleted_v5';
+let deletedBillIds=JSON.parse(localStorage.getItem(DELETED_KEY)||'[]');
+bills=bills.map(b=>({...b,updatedAt:Number(b.updatedAt||Date.now())}));
+const $=id=>document.getElementById(id);
+$('date').value=new Date().toISOString().slice(0,10);
+const money=n=>'¥'+Number(n||0).toLocaleString('zh-CN',{minimumFractionDigits:2,maximumFractionDigits:2});
+const due=b=>Math.max(0,Number(b.total||0)-Number(b.paid||0)-Number(b.buyback||0));
+function esc(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
+function js(s){return String(s).replace(/\\/g,'\\\\').replace(/'/g,"\\'")}
+function save(){
+  localStorage.setItem(KEY,JSON.stringify(bills));
+  renderMain();if(activeCustomer)renderCustomer();
+  if(window.cloudReady && window.cloudPushAll) window.cloudPushAll(bills,deletedBillIds).catch(()=>{});
+}
+function calcTotal(qty,unit,price,priceMode){
+  qty=Number(qty||0);price=Number(price||0);
+  if(priceMode==='pack' && unit==='手') return qty*24*price;
+  return qty*price;
+}
+function preview(){
+  $('preview').value=money(calcTotal($('qty').value,$('unit').value,$('price').value,$('priceMode').value));
+}
+$('qty').oninput=preview;$('price').oninput=preview;$('unit').onchange=preview;$('priceMode').onchange=preview;
+
+function addBill(){
+ let customer=$('customer').value.trim(),qty=Number($('qty').value||0),price=Number($('price').value||0);
+ if(!customer)return alert('请输入客户名称');
+ if(!$('date').value)return alert('请选择日期');
+ if(qty<=0)return alert('请输入数量');
+ let unit=$('unit').value,priceMode=$('priceMode').value,total=calcTotal(qty,unit,price,priceMode);
+ let now=Date.now(); bills.unshift({id:now,date:$('date').value,customer,series:$('series').value,type:$('type').value,qty,unit,priceMode,price,total,paid:0,buyback:0,note:$('note').value.trim(),updatedAt:now});
+ $('qty').value='';$('price').value='';$('note').value='';preview();save();
+}
+function status(b){let d=due(b);return d<=0?'paid':((Number(b.paid||0)+Number(b.buyback||0))>0?'partial':'unpaid')}
+function statusText(s){return s==='paid'?'已付款':s==='partial'?'部分付款':'未付款'}
+function removeBill(id){
+  if(confirm('确定删除这条记录吗？')){
+    if(!deletedBillIds.includes(String(id))) deletedBillIds.push(String(id));
+    localStorage.setItem(DELETED_KEY,JSON.stringify(deletedBillIds));
+    bills=bills.filter(b=>b.id!==id);
+    if(window.cloudDeleteOne) window.cloudDeleteOne(String(id)).catch(()=>{});
+    save();
+  }
+}
+function payBill(id){
+ let b=bills.find(x=>x.id===id),d=due(b);if(!b)return;
+ let v=prompt('本条账单还需付款 '+money(d)+'\n请输入本次收到的人民币金额：',d.toFixed(2));if(v===null)return;v=Number(v);
+ if(isNaN(v)||v<0)return alert('金额不正确');b.paid=Number(b.paid||0)+v;b.updatedAt=Date.now();save();
+}
+function buyBill(id){
+ let b=bills.find(x=>x.id===id);if(!b)return;
+ let v=prompt('请输入这条账单的买取抵扣金额（人民币）：',Number(b.buyback||0).toFixed(2));if(v===null)return;v=Number(v);
+ if(isNaN(v)||v<0)return alert('金额不正确');b.buyback=v;b.updatedAt=Date.now();save();
+}
+function renderMain(){
+ let q=$('search').value.trim().toLowerCase(),f=$('filter').value;
+ let rows=bills.filter(b=>(!q||b.customer.toLowerCase().includes(q))&&(!f||status(b)===f));
+ $('tbody').innerHTML=rows.length?rows.map(b=>`<tr><td>${b.date}</td><td><b style="cursor:pointer;color:#2563eb" onclick="openCustomer('${js(b.customer)}')">${esc(b.customer)}</b></td><td>${esc(b.series)} ${esc(b.type)} × ${b.qty}${esc(b.unit||'个')}</td><td>${money(b.total)}</td><td>${money(b.paid)}</td><td>${money(b.buyback)}</td><td class="${due(b)>0?'red':'green'}"><b>${money(due(b))}</b></td><td><span class="badge ${status(b)}">${statusText(status(b))}</span></td><td>${due(b)>0?`<button class="mini ok" onclick="payBill(${b.id})">收款</button>`:''}<button class="mini soft" onclick="buyBill(${b.id})">买取</button><button class="mini danger" onclick="removeBill(${b.id})">删除</button></td></tr>`).join(''):`<tr><td colspan="9" class="empty">暂无记录</td></tr>`;
+ let map={},total=0,paid=0;
+ bills.forEach(b=>{total+=Number(b.total);paid+=Number(b.paid||0)+Number(b.buyback||0);if(!map[b.customer])map[b.customer]={due:0,total:0};map[b.customer].due+=due(b);map[b.customer].total+=Number(b.total)});
+ $('sTotal').textContent=money(total);$('sDue').textContent=money(bills.reduce((a,b)=>a+due(b),0));$('sPaid').textContent=money(paid);$('sCustomers').textContent=Object.keys(map).length;
+ $('customerList').innerHTML=Object.keys(map).length?Object.entries(map).sort((a,b)=>b[1].due-a[1].due).map(([n,v])=>`<div class="cust" onclick="openCustomer('${js(n)}')"><span><b>${esc(n)}</b><br><small style="color:#70798b">累计 ${money(v.total)}</small></span><span class="${v.due>0?'red':'green'}"><b>${v.due>0?'欠 '+money(v.due):'已结清'}</b></span></div>`).join(''):`<div class="empty">还没有客户</div>`;
+ $('names').innerHTML=Object.keys(map).map(n=>`<option value="${esc(n)}">`).join('');
+}
+function openCustomer(name){activeCustomer=name;$('mainPage').style.display='none';$('customerPage').style.display='block';renderCustomer();window.scrollTo(0,0)}
+function backMain(){activeCustomer='';$('customerPage').style.display='none';$('mainPage').style.display='block';renderMain()}
+function customerBills(){return bills.filter(b=>b.customer===activeCustomer)}
+function renderCustomer(){
+ let bs=customerBills(),total=bs.reduce((a,b)=>a+Number(b.total),0),paid=bs.reduce((a,b)=>a+Number(b.paid||0),0),buy=bs.reduce((a,b)=>a+Number(b.buyback||0),0),d=bs.reduce((a,b)=>a+due(b),0);
+ $('cpName').textContent=activeCustomer;$('cpTotal').textContent=money(total);$('cpPaid').textContent=money(paid);$('cpBuy').textContent=money(buy);$('cpDue').textContent=money(d);
+ $('cpBody').innerHTML=bs.length?bs.map(b=>`<tr><td>${b.date}</td><td>${esc(b.series)} ${esc(b.type)}</td><td>${b.qty}${esc(b.unit||'个')}</td><td>${money(b.price)}${b.priceMode==='pack'&&b.unit==='手'?'/包':'/'+esc(b.unit||'个')}</td><td>${money(b.total)}</td><td>${money(b.paid)}</td><td>${money(b.buyback)}</td><td class="${due(b)>0?'red':'green'}"><b>${money(due(b))}</b></td><td>${esc(b.note||'')}</td><td>${due(b)>0?`<button class="mini ok" onclick="payBill(${b.id})">收款</button>`:''}<button class="mini soft" onclick="buyBill(${b.id})">买取</button><button class="mini danger" onclick="removeBill(${b.id})">删除</button></td></tr>`).join(''):'<tr><td colspan="10" class="empty">暂无记录</td></tr>';
+}
+function customerPayment(){
+ let bs=customerBills(),d=bs.reduce((a,b)=>a+due(b),0);if(d<=0)return alert('这个客户目前没有欠款');
+ let v=prompt(activeCustomer+' 当前欠款 '+money(d)+'\n请输入本次转账金额：',d.toFixed(2));if(v===null)return;v=Number(v);if(isNaN(v)||v<=0)return alert('金额不正确');
+ for(let b of bs.slice().reverse()){let r=due(b);if(r<=0)continue;let use=Math.min(v,r);b.paid=Number(b.paid||0)+use;b.updatedAt=Date.now();v-=use;if(v<=0)break}save();
+}
+function customerBuyback(){
+ let bs=customerBills(),d=bs.reduce((a,b)=>a+due(b),0);if(d<=0)return alert('这个客户目前没有欠款');
+ let v=prompt(activeCustomer+' 当前欠款 '+money(d)+'\n请输入本次买取店抵扣金额：');if(v===null)return;v=Number(v);if(isNaN(v)||v<=0)return alert('金额不正确');
+ for(let b of bs.slice().reverse()){let r=due(b);if(r<=0)continue;let use=Math.min(v,r);b.buyback=Number(b.buyback||0)+use;b.updatedAt=Date.now();v-=use;if(v<=0)break}save();
+}
+function settleCustomer(){
+ let bs=customerBills(),d=bs.reduce((a,b)=>a+due(b),0);if(d<=0)return alert('已经结清');
+ if(!confirm(`确认已收到 ${activeCustomer} 的全部欠款 ${money(d)} 吗？`))return;
+ bs.forEach(b=>{let r=due(b);if(r>0){b.paid=Number(b.paid||0)+r;b.updatedAt=Date.now()}});save();
+}
+function download(content,name,type){let blob=new Blob([content],{type}),a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),500)}
+function exportCSV(){let h=['日期','客户','系列','种类','数量','单位','计价方式','单价(CNY)','消费金额','已付款','买取抵扣','剩余欠款','状态','备注'];let r=bills.map(b=>[b.date,b.customer,b.series,b.type,b.qty,b.unit||'个',b.priceMode==='pack'?'按每包计价':'按当前单位计价',b.price,b.total,b.paid||0,b.buyback||0,due(b),statusText(status(b)),b.note||'']);let csv=[h,...r].map(x=>x.map(v=>`"${String(v).replace(/"/g,'""')}"`).join(',')).join('\n');download('\ufeff'+csv,'直播客户账单_CNY.csv','text/csv;charset=utf-8')}
+function backup(){download(JSON.stringify(bills,null,2),'直播客户账本_V2_备份.json','application/json')}
+
+window.getLedgerBills=()=>bills;
+window.getDeletedBillIds=()=>deletedBillIds;
+window.replaceLedgerBills=(arr)=>{
+  bills=(arr||[]).map(b=>({...b,updatedAt:Number(b.updatedAt||Date.now())}));
+  localStorage.setItem(KEY,JSON.stringify(bills));
+  renderMain();if(activeCustomer)renderCustomer();
+};
+window.clearDeletedBillIds=(ids)=>{
+  const done=new Set((ids||[]).map(String));
+  deletedBillIds=deletedBillIds.filter(id=>!done.has(String(id)));
+  localStorage.setItem(DELETED_KEY,JSON.stringify(deletedBillIds));
+};
+function openCloudModal(){ $('cloudModal').classList.add('show'); }
+function closeCloudModal(){ $('cloudModal').classList.remove('show'); }
+function cloudLogin(){ if(window.firebaseCloudLogin) window.firebaseCloudLogin(); else alert('云同步模块正在加载，请稍后再试'); }
+function cloudRegister(){ if(window.firebaseCloudRegister) window.firebaseCloudRegister(); else alert('云同步模块正在加载，请稍后再试'); }
+function cloudLogout(){ if(window.firebaseCloudLogout) window.firebaseCloudLogout(); }
+function manualCloudSync(){ if(window.firebaseManualSync) window.firebaseManualSync(); }
+
+renderMain();
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('./service-worker.js?v=7').then(reg=>reg.update()).catch(()=>{});
+  });
+}
+</script>
+<script type="module" src="./cloud-sync.js?v=7"></script>
+</body>
+</html>
