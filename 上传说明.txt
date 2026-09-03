@@ -1,0 +1,29 @@
+直播卡牌收货卖货账本 V2
+
+【主要功能】
+- 收货：按日元记录
+- 卖货：直接输入人民币价格
+- 卖货时输入成交汇率：1 CNY = ? JPY
+- 自动换算折合日元
+- 每笔卖货保存成交汇率，历史记录不会因之后汇率变化而改变
+- 手续费/运费按日元
+- 今日收货、今日卖货、现金差额等统计按日元
+- CSV 导出包含币种、成交汇率、折合日元金额
+- 本地浏览器保存数据
+- 支持安装到手机主屏幕（PWA）
+
+【GitHub Pages 上传方法】
+1. 解压此 ZIP。
+2. 把下面所有文件上传到 GitHub 仓库根目录：
+   index.html
+   manifest.webmanifest
+   service-worker.js
+   icon-192.png
+   icon-512.png
+3. GitHub -> Settings -> Pages。
+4. Build and deployment 选择 Deploy from a branch。
+5. Branch 选择 main / root。
+6. 保存并等待 Pages 部署完成。
+
+注意：
+不要只上传 ZIP 文件本身，要上传解压后的文件。

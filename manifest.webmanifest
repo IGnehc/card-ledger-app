@@ -1,11 +1,11 @@
 {
-  "name": "直播客户账本 V8",
-  "short_name": "直播账本",
-  "description": "人民币结算、自动折算日元、保存成交汇率、多设备云同步",
+  "name": "直播卡牌收货卖货账本",
+  "short_name": "收卖账本",
+  "description": "收货按日元记录，卖货输入人民币并自动按成交汇率折算日元",
   "start_url": "./index.html",
   "scope": "./",
   "display": "standalone",
-  "background_color": "#f4f6fa",
+  "background_color": "#f5f7fb",
   "theme_color": "#2563eb",
   "icons": [
     {
