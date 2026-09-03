@@ -60,6 +60,7 @@ button{cursor:pointer}
 .close{border:0;background:#f3f4f6;border-radius:999px;width:36px;height:36px}
 .hr{height:1px;background:var(--border);margin:12px 0}
 .small{font-size:12px;color:var(--muted)}
+.fxbox{background:#f8fafc;border:1px solid var(--border);border-radius:11px;padding:10px 12px}.fxrate{font-weight:800}.fxok{color:var(--green)}.fxerr{color:var(--red)}
 @media(max-width:720px){
   .grid4{grid-template-columns:1fr 1fr}.quick{grid-template-columns:1fr 1fr}.formgrid{grid-template-columns:1fr 1fr}.span3{grid-column:1/-1}.toolbar{grid-template-columns:1fr 1fr}.toolbar input{grid-column:1/-1}
 }
@@ -142,7 +143,7 @@ button{cursor:pointer}
         </div>
         <div class="tablewrap">
           <table class="table">
-            <thead><tr><th>日期</th><th>类型</th><th>商品</th><th>数量</th><th>单价</th><th>费用</th><th>金额</th><th>付款</th><th>客户/卖家</th><th></th></tr></thead>
+            <thead><tr><th>日期</th><th>类型</th><th>商品</th><th>数量</th><th>单价 / 汇率</th><th>费用</th><th>金额</th><th>付款</th><th>客户/卖家</th><th></th></tr></thead>
             <tbody id="ledgerBody"></tbody>
           </table>
         </div>
@@ -237,8 +238,17 @@ button{cursor:pointer}
         <div class="field span2" id="customItemField" style="display:none"><label>其他商品名称</label><input id="eCustomItem" placeholder="输入商品名称"></div>
         <input id="eItem" type="hidden">
         <div class="field"><label>数量</label><input id="eQty" type="number" min="0.01" step="0.01" value="" required placeholder="请输入数量"></div>
-        <div class="field"><label>单价（日元）</label><input id="ePrice" type="number" min="0" step="1" required placeholder="0"></div>
-        <div class="field"><label>手续费 / 运费</label><input id="eFee" type="number" min="0" step="1" value="0"></div>
+        <div class="field" id="cnyPriceField" style="display:none"><label>卖出单价（人民币）</label><input id="eCnyPrice" type="number" min="0" step="0.01" placeholder="0.00"></div>
+        <div class="field"><label id="priceLabel">单价（日元）</label><input id="ePrice" type="number" min="0" step="1" required placeholder="0"></div>
+        <div class="field span2" id="fxField" style="display:none">
+          <label>人民币 → 日元 汇率</label>
+          <div class="fxbox">
+            <div><span class="fxrate" id="fxRateText">正在获取最新汇率…</span></div>
+            <div class="small" id="fxUpdatedText" style="margin-top:4px">卖货时自动换算并保存当时汇率</div>
+            <div class="actions" style="margin-top:8px"><button class="btn" id="refreshFx" type="button">刷新汇率</button></div>
+          </div>
+        </div>
+        <div class="field"><label>手续费 / 运费（日元）</label><input id="eFee" type="number" min="0" step="1" value="0"></div>
         <div class="field" id="payField" style="display:none"><label>付款状态</label><select id="ePay"><option value="paid">已付款</option><option value="unpaid">未付款</option></select></div>
         <div class="field"><label id="partyLabel">卖家</label><input id="eParty" placeholder="可不填"></div>
         <div class="field"><label>日期</label><input id="eDate" type="date" required></div>
@@ -292,8 +302,55 @@ const norm=s=>String(s||'').replace(/\s+/g,'').trim().toUpperCase();
 const today=()=>{const d=new Date(),y=d.getFullYear(),m=String(d.getMonth()+1).padStart(2,'0'),da=String(d.getDate()).padStart(2,'0');return `${y}-${m}-${da}`};
 const monthKey=s=>String(s||'').slice(0,7);
 const uid=()=>crypto.randomUUID?crypto.randomUUID():Date.now()+'_'+Math.random();
+const FX_KEY='card_live_fx_cny_jpy_v1';
+let fxRate=0,fxFetchedAt='',fxLoading=false;
+function loadFxCache(){
+  try{
+    const d=JSON.parse(localStorage.getItem(FX_KEY)||'null');
+    if(d&&Number(d.rate)>0){fxRate=Number(d.rate);fxFetchedAt=d.fetchedAt||''}
+  }catch{}
+}
+function fxTimeText(){
+  if(!fxFetchedAt)return '';
+  try{return new Date(fxFetchedAt).toLocaleString('zh-CN',{hour12:false})}catch{return fxFetchedAt}
+}
+function renderFx(){
+  if(!$('fxRateText'))return;
+  if(fxRate>0){
+    $('fxRateText').textContent=`1 人民币 = ${fxRate.toFixed(4)} 日元`;
+    $('fxRateText').className='fxrate fxok';
+    $('fxUpdatedText').textContent=`最新获取：${fxTimeText()} · 保存时同时记录人民币价格、汇率和日元价格`;
+  }else{
+    $('fxRateText').textContent='暂未获取到汇率';
+    $('fxRateText').className='fxrate fxerr';
+    $('fxUpdatedText').textContent='请联网后点击“刷新汇率”';
+  }
+}
+function recalcJpyFromCny(){
+  if(mode!=='sell')return;
+  const raw=$('eCnyPrice').value,cny=Number(raw);
+  $('ePrice').value=(raw!==''&&cny>=0&&fxRate>0)?Math.round(cny*fxRate):'';
+}
+async function fetchFx(force=false){
+  if(fxLoading)return fxRate;
+  const age=fxFetchedAt?Date.now()-new Date(fxFetchedAt).getTime():Infinity;
+  if(!force&&fxRate>0&&age<30*60*1000){renderFx();recalcJpyFromCny();return fxRate}
+  fxLoading=true;
+  if($('fxRateText')){$('fxRateText').textContent='正在获取最新汇率…';$('fxRateText').className='fxrate'}
+  try{
+    const r=await fetch('https://open.er-api.com/v6/latest/CNY',{cache:'no-store'});
+    if(!r.ok)throw new Error('HTTP '+r.status);
+    const d=await r.json(),rate=Number(d&&d.rates&&d.rates.JPY);
+    if(!(rate>0))throw new Error('汇率数据无效');
+    fxRate=rate;fxFetchedAt=new Date().toISOString();
+    localStorage.setItem(FX_KEY,JSON.stringify({rate:fxRate,fetchedAt:fxFetchedAt}));
+  }catch(err){console.error('FX fetch failed',err)}
+  finally{fxLoading=false;renderFx();recalcJpyFromCny()}
+  return fxRate;
+}
 
 function load(){
+  loadFxCache();
   try{entries=JSON.parse(localStorage.getItem(KEY)||'[]');if(!Array.isArray(entries))entries=[]}catch{entries=[]}
   try{presets=JSON.parse(localStorage.getItem(PRESET_KEY)||'[]');if(!Array.isArray(presets))presets=[]}catch{presets=[]}
   if(!presets.length){
@@ -349,11 +406,12 @@ function go(id){
   window.scrollTo({top:0,behavior:'smooth'});
 }
 function openEntry(m,item=''){
-  setMode(m); $('eQty').value=''; $('eFee').value='0'; $('eParty').value=''; $('eNote').value=''; $('ePay').value='paid'; $('eDate').value=today();
+  setMode(m); $('eQty').value=''; $('eFee').value='0'; $('eParty').value=''; $('eNote').value=''; $('ePay').value='paid'; $('eDate').value=today(); $('eCnyPrice').value='';
   resetProductSelector();
   if(item) setProductFromName(item);
   const p=presets.find(x=>norm(x.name)===norm(item));
-  $('ePrice').value=p?(m==='buy'?p.buy:p.sell)||'':'';
+  $('ePrice').value=p?(m==='buy'?p.buy:'')||'':'';
+  if(m==='sell')fetchFx(false);
   $('entryModal').classList.add('open');
   setTimeout(()=>$('eSeries').focus(),50);
 }
@@ -364,8 +422,17 @@ function setMode(m){
   $('saveEntry').textContent=m==='buy'?'保存收货':'保存卖货';
   $('partyLabel').textContent=m==='buy'?'卖家':'客户';
   $('payField').style.display=m==='sell'?'block':'none';
-  const p=presets.find(x=>norm(x.name)===norm($('eItem').value));
-  if(p)$('ePrice').value=(m==='buy'?p.buy:p.sell)||$('ePrice').value;
+  $('cnyPriceField').style.display=m==='sell'?'block':'none';
+  $('fxField').style.display=m==='sell'?'block':'none';
+  $('priceLabel').textContent=m==='sell'?'自动换算单价（日元）':'单价（日元）';
+  $('ePrice').readOnly=m==='sell';
+  if(m==='buy'){
+    const p=presets.find(x=>norm(x.name)===norm($('eItem').value));
+    if(p)$('ePrice').value=p.buy||$('ePrice').value;
+  }else{
+    $('ePrice').value='';
+    renderFx();fetchFx(false);
+  }
 }
 function renderHome(){
   const {inv,enriched}=analysis(), t=today(), mk=t.slice(0,7);
@@ -432,7 +499,12 @@ function filtered(){
 }
 function renderLedger(){
   const list=filtered();
-  $('ledgerBody').innerHTML=list.map(e=>`<tr><td>${e.date}</td><td><span class="badge ${e.type}">${e.type==='buy'?'收货':'卖货'}</span></td><td>${esc(e.item)}</td><td>${fmtQty(e.qty)}</td><td>${money(e.price)}</td><td>${money(e.fee||0)}</td><td>${money(gross(e))}</td><td>${e.type==='sell'?`<span class="badge ${e.payment==='unpaid'?'unpaid':'paid'}">${e.payment==='unpaid'?'未付款':'已付款'}</span>`:'-'}</td><td>${esc(e.party||'')}</td><td><button class="btn danger" data-del="${e.id}">删除</button></td></tr>`).join('');
+  $('ledgerBody').innerHTML=list.map(e=>{
+    const priceInfo=e.type==='sell'&&Number(e.cnyPrice)>0
+      ? `${money(e.price)}<div class="small">¥${Number(e.cnyPrice).toLocaleString('zh-CN',{maximumFractionDigits:2})} RMB · 1元=${Number(e.fxRate||0).toFixed(4)}円</div>`
+      : money(e.price);
+    return `<tr><td>${e.date}</td><td><span class="badge ${e.type}">${e.type==='buy'?'收货':'卖货'}</span></td><td>${esc(e.item)}</td><td>${fmtQty(e.qty)}</td><td>${priceInfo}</td><td>${money(e.fee||0)}</td><td>${money(gross(e))}</td><td>${e.type==='sell'?`<span class="badge ${e.payment==='unpaid'?'unpaid':'paid'}">${e.payment==='unpaid'?'未付款':'已付款'}</span>`:'-'}</td><td>${esc(e.party||'')}</td><td><button class="btn danger" data-del="${e.id}">删除</button></td></tr>`;
+  }).join('');
   document.querySelectorAll('[data-del]').forEach(b=>b.addEventListener('click',()=>{if(confirm('确定删除这条流水吗？')){entries=entries.filter(e=>e.id!==b.dataset.del);save();renderAll()}}));
 }
 function renderAll(){renderHome();if($('inventory').classList.contains('active'))renderInventory();if($('profit').classList.contains('active'))renderProfit();if($('ledger').classList.contains('active'))renderLedger()}
@@ -478,7 +550,7 @@ function updateProductName(){
   if(s==='other') $('eItem').value=custom;
   else $('eItem').value=(s&&k)?`${s} ${k}`:'';
   const p=presets.find(x=>norm(x.name)===norm($('eItem').value));
-  if(p)$('ePrice').value=(mode==='buy'?p.buy:p.sell)||$('ePrice').value;
+  if(p&&mode==='buy')$('ePrice').value=p.buy||$('ePrice').value;
 }
 function setProductFromName(name){
   const compact=String(name||'').trim();
@@ -514,14 +586,19 @@ document.querySelectorAll('[data-go]').forEach(b=>b.addEventListener('click',()=
 document.querySelectorAll('[data-close]').forEach(b=>b.addEventListener('click',()=>closeModal(b.dataset.close)));
 $('qBuy').addEventListener('click',()=>openEntry('buy'));$('qSell').addEventListener('click',()=>openEntry('sell'));
 $('mBuy').addEventListener('click',()=>setMode('buy'));$('mSell').addEventListener('click',()=>setMode('sell'));
-$('eItem').addEventListener('change',()=>{const p=presets.find(x=>norm(x.name)===norm($('eItem').value));if(p)$('ePrice').value=(mode==='buy'?p.buy:p.sell)||$('ePrice').value});
+$('eItem').addEventListener('change',()=>{const p=presets.find(x=>norm(x.name)===norm($('eItem').value));if(p&&mode==='buy')$('ePrice').value=p.buy||$('ePrice').value});
+$('eCnyPrice').addEventListener('input',recalcJpyFromCny);
+$('refreshFx').addEventListener('click',()=>fetchFx(true));
 $('entryForm').addEventListener('submit',e=>{
   e.preventDefault();
   updateProductName();
   const item=$('eItem').value.trim(),qty=Number($('eQty').value),price=Number($('ePrice').value),fee=Number($('eFee').value||0);
+  const cnyPrice=mode==='sell'?Number($('eCnyPrice').value):0;
   if(!item)return alert('请选择系列和种类');
+  if(mode==='sell'&&$('eCnyPrice').value==='')return alert('请输入人民币卖出单价');
+  if(mode==='sell'&&!(fxRate>0))return alert('还没有获取到人民币/日元汇率，请联网后刷新汇率');
   if(qty<=0||price<0||fee<0)return alert('请检查数量和价格');
-  entries.push({id:uid(),type:mode,item,qty,price,fee,party:$('eParty').value.trim(),date:$('eDate').value,note:$('eNote').value.trim(),payment:mode==='sell'?$('ePay').value:'paid',createdAt:new Date().toISOString()});
+  entries.push({id:uid(),type:mode,item,qty,price,fee,cnyPrice:mode==='sell'?cnyPrice:null,fxRate:mode==='sell'?fxRate:null,fxFetchedAt:mode==='sell'?fxFetchedAt:null,party:$('eParty').value.trim(),date:$('eDate').value,note:$('eNote').value.trim(),payment:mode==='sell'?$('ePay').value:'paid',createdAt:new Date().toISOString()});
   save();closeModal('entryModal');renderAll();
 });
 $('managePresets').addEventListener('click',()=>{$('presetModal').classList.add('open');renderPresetList()});
@@ -551,7 +628,7 @@ $('restoreFile').addEventListener('change',e=>{
   const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=()=>{try{const d=JSON.parse(r.result);const en=Array.isArray(d)?d:d.entries;if(!Array.isArray(en))throw 0;if(confirm(`读取到 ${en.length} 条流水，确定覆盖当前数据吗？`)){entries=en;presets=Array.isArray(d.presets)?d.presets:presets;save();savePresets();renderAll()}}catch{alert('备份文件格式不正确')}};r.readAsText(f);e.target.value='';
 });
 $('exportCsv').addEventListener('click',()=>{
-  const rows=[['日期','类型','商品','数量','单价','费用','交易金额','付款状态','客户/卖家','备注'],...entries.map(e=>[e.date,e.type==='buy'?'收货':'卖货',e.item,e.qty,e.price,e.fee||0,gross(e),e.type==='sell'?(e.payment==='unpaid'?'未付款':'已付款'):'',e.party||'',e.note||''])];
+  const rows=[['日期','类型','商品','数量','单价(日元)','卖出单价(人民币)','CNY/JPY汇率','汇率获取时间','费用(日元)','交易金额(日元)','付款状态','客户/卖家','备注'],...entries.map(e=>[e.date,e.type==='buy'?'收货':'卖货',e.item,e.qty,e.price,e.cnyPrice??'',e.fxRate??'',e.fxFetchedAt??'',e.fee||0,gross(e),e.type==='sell'?(e.payment==='unpaid'?'未付款':'已付款'):'',e.party||'',e.note||''])];
   const csv='\ufeff'+rows.map(r=>r.map(x=>`"${String(x).replace(/"/g,'""')}"`).join(',')).join('\n');download(csv,'卡牌账本流水.csv','text/csv;charset=utf-8');
 });
 $('importV1').addEventListener('click',()=>{
@@ -583,7 +660,7 @@ function ref(){return doc(db,'cardLedgerUsers',user.uid)}
 async function upload(){
   if(!user||remote)return;
   stat('正在同步…','#d97706');
-  await setDoc(ref(),{...window.LedgerBridge.getData(),updatedAt:serverTimestamp(),version:'2.4'});
+  await setDoc(ref(),{...window.LedgerBridge.getData(),updatedAt:serverTimestamp(),version:'2.5'});
   stat('云端已同步','#16a34a');
 }
 function queueUpload(){if(!user||remote)return;clearTimeout(timer);timer=setTimeout(()=>upload().catch(e=>{console.error(e);stat('同步失败','#dc2626')}),700)}
